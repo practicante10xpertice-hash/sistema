@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SistemAsist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{
+  --ink:#080c15;--surface:#0e1525;--card:#111827;--card2:#161f30;
+  --border:rgba(99,132,255,.12);--border2:rgba(255,255,255,.06);
+  --accent:#6384ff;--accent2:#a78bfa;--success:#22d3a8;
+  --warning:#f59e0b;--danger:#ff5e7a;--info:#38bdf8;
+  --text:#e2e8f7;--text2:#94a3c8;--muted:#4a5a7a;
+  --sidebar-w:260px;--header-h:64px;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --radius:14px;--radius-sm:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:var(--font-body);background:var(--ink);color:var(--text);overflow-x:hidden}
+.login-bg{min-height:100vh;background:radial-gradient(ellipse 80% 60% at 20% 10%,#0f1635,var(--ink) 60%);
+  position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.grid-overlay{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(99,132,255,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(99,132,255,.04) 1px,transparent 1px);
+  background-size:60px 60px;pointer-events:none}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;opacity:.4;animation:float 8s ease-in-out infinite alternate}
+.orb-1{width:500px;height:500px;background:#6384ff;top:-150px;left:-150px}
+.orb-2{width:350px;height:350px;background:#a78bfa;bottom:-100px;right:-100px;animation-delay:3s}
+@keyframes float{from{transform:translate(0,0) scale(1)}to{transform:translate(30px,-30px) scale(1.08)}}
+.login-wrapper{display:flex;width:min(1100px,95vw);min-height:600px;border-radius:28px;overflow:hidden;
+  border:1px solid var(--border);box-shadow:0 40px 100px rgba(0,0,0,.6);position:relative;z-index:10}
+.login-brand{flex:1;background:linear-gradient(145deg,#0f1533,#1a1042);padding:60px 50px;
+  display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)}
+.brand-icon{width:72px;height:72px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;
+  margin-bottom:28px;box-shadow:0 12px 40px rgba(99,132,255,.4)}
+.brand-title{font-family:var(--font-head);font-size:42px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:12px}
+.brand-sub{font-size:15px;color:#8b9fd4;line-height:1.6;margin-bottom:40px}
+.feat-item{display:flex;align-items:center;gap:12px;color:#c4d0ee;font-size:14px;margin-bottom:14px}
+.feat-item i{color:var(--accent);width:18px}
+.login-form-panel{width:440px;background:var(--card);display:flex;align-items:center;justify-content:center;padding:50px 40px}
+.login-card{width:100%}
+.form-title{font-family:var(--font-head);font-size:30px;font-weight:700;color:var(--text);margin-bottom:6px}
+.form-subtitle{font-size:14px;color:var(--muted);margin-bottom:32px}
+.input-wrapper{position:relative}
+.input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.input-custom{width:100%;padding:13px 44px;background:rgba(255,255,255,.04);border:1px solid rgba(99,132,255,.15);
+  border-radius:12px;color:var(--text);font-size:15px;outline:none;transition:all .25s}
+.input-custom:focus{border-color:var(--accent);background:rgba(99,132,255,.06);box-shadow:0 0 0 3px rgba(99,132,255,.12)}
+.toggle-pass{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px}
+.form-group-custom{margin-bottom:20px}
+.form-label-custom{display:block;font-size:13px;font-weight:500;color:#8b9fd4;margin-bottom:8px}
+.btn-login{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border:none;border-radius:12px;font-family:var(--font-head);font-size:15px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .3s;
+  box-shadow:0 8px 30px rgba(99,132,255,.35);margin-top:10px}
+.btn-login:hover:not(:disabled){transform:translateY(-2px)}
+.btn-login:disabled{opacity:.7;cursor:not-allowed}
+.alert-custom{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:20px}
+.alert-error{background:rgba(255,94,122,.12);color:#ff8fa8;border:1px solid rgba(255,94,122,.25)}
+.demo-hint{text-align:center;margin-top:16px;color:#2d3748;font-size:12px}
+.app-layout{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:1000;transition:transform .3s}
+.sidebar-header{padding:24px 20px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.sidebar-logo{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+.sidebar-brand{font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text)}
+.sidebar-brand small{display:block;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:1px;text-transform:uppercase}
+.sidebar-user{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.user-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.user-name{font-size:13px;font-weight:600;color:var(--text)}
+.user-role{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-section-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:12px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);
+  color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;background:none;border:none;width:100%;text-align:left;transition:all .2s;margin-bottom:2px;position:relative}
+.nav-item i{width:18px;text-align:center;font-size:15px}
+.nav-item:hover{background:rgba(99,132,255,.08);color:var(--text)}
+.nav-item.active{background:rgba(99,132,255,.15);color:var(--accent)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.sidebar-footer{padding:16px 12px;border-top:1px solid var(--border)}
+.main-content{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:100}
+.topbar-title{font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--text)}
+.topbar-subtitle{font-size:13px;color:var(--muted)}
+.topbar-btn{width:38px;height:38px;border-radius:10px;background:var(--card2);border:1px solid var(--border2);
+  color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s}
+.topbar-btn:hover{background:rgba(99,132,255,.1);color:var(--accent)}
+.page-content{flex:1;padding:28px}
+.hamburger{display:none}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999}
+.sidebar-overlay.active{display:block}
+.card-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:0 4px 24px rgba(0,0,0,.25)}
+.card-panel-title{font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.card-panel-title i{color:var(--accent)}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:all .2s}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,.45)}
+.stat-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.stat-value{font-family:var(--font-head);font-size:32px;font-weight:800;color:var(--text);line-height:1}
+.stat-label{font-size:13px;color:var(--muted);margin-top:4px}
+.icon-blue{background:rgba(99,132,255,.15);color:var(--accent)}
+.icon-green{background:rgba(34,211,168,.15);color:var(--success)}
+.icon-orange{background:rgba(245,158,11,.15);color:var(--warning)}
+.icon-red{background:rgba(255,94,122,.15);color:var(--danger)}
+.icon-purple{background:rgba(167,139,250,.15);color:var(--accent2)}
+.table-wrapper{overflow-x:auto}
+.table-custom{width:100%;border-collapse:collapse}
+.table-custom th{background:rgba(99,132,255,.06);color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.table-custom td{padding:13px 16px;color:var(--text2);font-size:14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.table-custom tr:hover td{background:rgba(99,132,255,.04);color:var(--text)}
+.badge-custom{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600}
+.badge-green{background:rgba(34,211,168,.12);color:var(--success)}
+.badge-red{background:rgba(255,94,122,.12);color:var(--danger)}
+.badge-orange{background:rgba(245,158,11,.12);color:var(--warning)}
+.badge-blue{background:rgba(99,132,255,.12);color:var(--accent)}
+.badge-gray{background:rgba(148,163,200,.1);color:var(--text2)}
+.btn-primary-custom{padding:9px 20px;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+.btn-primary-custom:hover{opacity:.9;transform:translateY(-1px)}
+.btn-outline-custom{padding:8px 18px;border-radius:var(--radius-sm);background:transparent;color:var(--text2);border:1px solid var(--border2);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+.btn-outline-custom:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger-custom{padding:8px 18px;border-radius:var(--radius-sm);background:rgba(255,94,122,.12);color:var(--danger);border:1px solid rgba(255,94,122,.2);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+.form-field{margin-bottom:18px}
+.form-field label{display:block;font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.form-control-custom{width:100%;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:14px;outline:none;transition:all .2s}
+.form-control-custom:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,132,255,.1)}
+.form-control-custom option{background:var(--card)}
+.alert-success-msg{background:rgba(34,211,168,.1);color:#6ee7b7;border:1px solid rgba(34,211,168,.2);border-radius:10px;padding:12px 16px;font-size:14px}
+.alert-danger-msg{background:rgba(255,94,122,.1);color:#fca5a5;border:1px solid rgba(255,94,122,.2);border-radius:10px;padding:12px 16px;font-size:14px}
+.alert-warning-msg{background:rgba(245,158,11,.1);color:#fcd34d;border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;font-size:14px}
+.page-section{display:none}
+.page-section.active{display:block}
+.loading-overlay{position:fixed;inset:0;background:rgba(8,12,21,.8);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.loading-spinner{width:48px;height:48px;border:4px solid rgba(99,132,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.reloj-display{font-family:var(--font-head);font-size:56px;font-weight:800;color:var(--text);letter-spacing:-2px;line-height:1}
+.btn-asistencia{width:100%;padding:18px 24px;border-radius:16px;border:2px solid transparent;font-family:var(--font-head);font-size:18px;font-weight:700;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:12px}
+.btn-entrada{background:linear-gradient(135deg,#22d3a8,#059669);color:#fff;box-shadow:0 10px 30px rgba(34,211,168,.3)}
+.btn-entrada:hover:not(:disabled){transform:translateY(-3px)}
+.btn-salida{background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff;box-shadow:0 10px 30px rgba(99,132,255,.3)}
+.btn-salida:hover:not(:disabled){transform:translateY(-3px)}
+.btn-asistencia:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.status-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:50px;font-size:14px;font-weight:600}
+.status-ok{background:rgba(34,211,168,.12);color:var(--success)}
+.status-pend{background:rgba(245,158,11,.12);color:var(--warning)}
+.sala-layout{display:grid;grid-template-columns:1fr 300px;gap:16px}
+.video-grid{background:#000;border-radius:14px;border:1px solid var(--border);min-height:460px;padding:12px;display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));align-content:start}
+.video-item{position:relative;border-radius:10px;overflow:hidden;background:#111;aspect-ratio:16/9}
+.video-item video{width:100%;height:100%;object-fit:cover;display:block}
+.video-label{position:absolute;bottom:6px;left:8px;background:rgba(0,0,0,.7);color:#fff;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px}
+.no-video-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--muted)}
+.nv-avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px}
+.controles{background:var(--card2);border-radius:12px;padding:12px 16px;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.ctrl-btn{width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s}
+.ctrl-btn.active{background:rgba(99,132,255,.2);color:var(--accent)}
+.ctrl-btn.inactive{background:rgba(255,94,122,.2);color:var(--danger)}
+.ctrl-btn.danger{background:var(--danger);color:#fff}
+.timer-circle{width:80px;height:80px;border-radius:50%;margin:0 auto 12px;background:conic-gradient(var(--accent) 0%,rgba(99,132,255,.1) 0%);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--accent);border:3px solid rgba(99,132,255,.2)}
+.live-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:rgba(34,211,168,.1);color:var(--success);font-size:12px;font-weight:700}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--success);animation:lp 1.4s infinite}
+@keyframes lp{0%,100%{opacity:1}50%{opacity:.2}}
+.p-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;margin-bottom:6px}
+.p-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+@media(max-width:900px){.sala-layout{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main-content{margin-left:0}
+  .hamburger{display:flex}
+  .page-content{padding:16px}
+  .topbar{padding:0 16px}
+  .login-form-panel{width:100%}
+  .login-brand{display:none}
+  .reloj-display{font-size:36px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+  <div class="loading-spinner"></div>
+  <div style="color:var(--text2);font-size:14px">Procesando...</div>
+</div>
+
+<!-- ════ LOGIN ════ -->
+<div id="loginScreen">
+  <div class="login-bg">
+    <div class="grid-overlay"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="login-wrapper">
+      <div class="login-brand">
+        <div class="brand-icon"><i class="fas fa-fingerprint"></i></div>
+        <h1 class="brand-title">SistemAsist</h1>
+        <p class="brand-sub">Sistema Empresarial de<br>Control de Asistencia Remota</p>
+        <div class="feat-item"><i class="fas fa-shield-halved"></i><span>Seguridad avanzada</span></div>
+        <div class="feat-item"><i class="fas fa-location-dot"></i><span>Geolocalización en tiempo real</span></div>
+        <div class="feat-item"><i class="fas fa-chart-line"></i><span>Reportes automatizados</span></div>
+        <div class="feat-item"><i class="fas fa-video"></i><span>Videollamadas integradas</span></div>
+        <div style="margin-top:40px;color:#4a5568;font-size:11px;letter-spacing:1px">v2.0 — Google Apps Script</div>
+      </div>
+      <div class="login-form-panel">
+        <div class="login-card">
+          <h2 class="form-title">Bienvenido</h2>
+          <p class="form-subtitle">Ingresa tus credenciales para continuar</p>
+          <div class="alert-custom alert-error" id="loginError" style="display:none"></div>
+          <div class="form-group-custom">
+            <label class="form-label-custom">Usuario</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user input-icon"></i>
+              <input type="text" id="loginUsuario" class="input-custom" placeholder="tu.usuario" maxlength="60">
+            </div>
+          </div>
+          <div class="form-group-custom">
+            <label class="form-label-custom">Contraseña</label>
+            <div class="input-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="loginPassword" class="input-custom" placeholder="••••••••" maxlength="100">
+              <button type="button" class="toggle-pass" onclick="togglePass()">
+                <i class="fas fa-eye" id="eyeIcon"></i>
+              </button>
+            </div>
+          </div>
+          <button class="btn-login" id="btnLogin" onclick="doLogin()">
+            <span id="btnLoginText">Ingresar al Sistema</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          <div class="demo-hint">Demo — admin / Admin@2024</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SISTEMA PRINCIPAL ════ -->
+<div id="appScreen" style="display:none">
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo"><i class="fas fa-fingerprint"></i></div>
+        <div class="sidebar-brand">SistemAsist<small>v2.0 GAS</small></div>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sidebarInitials">AS</div>
+        <div>
+          <div class="user-name" id="sidebarNombre">Usuario</div>
+          <div class="user-role" id="sidebarRol">Colaborador</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><i class="fas fa-gauge-high"></i> Dashboard</button>
+        <button class="nav-item" onclick="showPage('asistencia')" id="nav-asistencia"><i class="fas fa-clock"></i> Registrar Asistencia</button>
+        <button class="nav-item" onclick="showPage('historial')" id="nav-historial"><i class="fas fa-calendar-check"></i> Mi Historial</button>
+        <div class="nav-section-label" style="margin-top:12px">Reuniones</div>
+        <button class="nav-item" onclick="showPage('reunion')" id="nav-reunion"><i class="fas fa-video"></i> Unirse a Reunión</button>
+        <div id="adminNav" style="display:none">
+          <div class="nav-section-label" style="margin-top:12px">Administración</div>
+          <button class="nav-item" onclick="showPage('colaboradores')" id="nav-colaboradores"><i class="fas fa-users"></i> Colaboradores</button>
+          <button class="nav-item" onclick="showPage('grupos')" id="nav-grupos"><i class="fas fa-users-rectangle"></i> Grupos y Reuniones</button>
+          <button class="nav-item" onclick="showPage('control')" id="nav-control"><i class="fas fa-list-check"></i> Control Asistencia</button>
+          <button class="nav-item" onclick="showPage('reportes')" id="nav-reportes"><i class="fas fa-file-chart-column"></i> Reportes</button>
+          <button class="nav-item" onclick="showPage('logs')" id="nav-logs"><i class="fas fa-shield-halved"></i> Logs de Acceso</button>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="nav-item" onclick="showPage('perfil')" id="nav-perfil"><i class="fas fa-user-gear"></i> Mi Perfil</button>
+        <button class="nav-item" onclick="doLogout()" style="color:var(--danger)"><i class="fas fa-right-from-bracket"></i> Cerrar Sesión</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+          <button class="topbar-btn hamburger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+          <div>
+            <div class="topbar-title" id="topbarTitle">Dashboard</div>
+            <div class="topbar-subtitle" id="topbarClock"></div>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <div class="topbar-btn"><i class="fas fa-bell"></i></div>
+          <button class="topbar-btn" onclick="doLogout()"><i class="fas fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div id="globalMsg" style="margin-bottom:16px;display:none"></div>
+
+        <!-- DASHBOARD -->
+        <div class="page-section active" id="page-dashboard">
+          <div id="dashboardContent"><div class="text-center py-5"><div class="loading-spinner mx-auto"></div></div></div>
+        </div>
+
+        <!-- ASISTENCIA -->
+        <div class="page-section" id="page-asistencia">
+          <div class="row g-4">
+            <div class="col-lg-7">
+              <div class="card-panel">
+                <div style="padding:28px 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px">
+                  <div class="reloj-display" id="relojGrande">--:--:--</div>
+                  <div style="font-size:16px;color:var(--text2);margin-top:6px" id="fechaGrande"></div>
+                </div>
+                <div class="d-flex gap-3 mb-4 flex-wrap" id="estadoPills">
+                  <div class="status-pill status-pend"><i class="fas fa-clock"></i> Entrada: Pendiente</div>
+                  <div class="status-pill status-pend"><i class="fas fa-clock"></i> Salida: Pendiente</div>
+                </div>
+                <div style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15);border-radius:10px;padding:12px 16px;font-size:13px;color:#7dd3fc;margin-bottom:20px" id="gpsInfo">
+                  <i class="fas fa-location-dot"></i> Obteniendo ubicación...
+                </div>
+                <div class="mb-4">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text2);font-size:14px;margin-bottom:12px">
+                    <input type="checkbox" id="enableCamera" onchange="toggleCameraAsist()">
+                    <i class="fas fa-camera" style="color:var(--accent)"></i> Tomar foto como evidencia (opcional)
+                  </label>
+                  <div id="cameraSection" style="display:none">
+                    <div style="width:200px;border-radius:12px;overflow:hidden;border:2px solid var(--accent);background:#000;margin-bottom:8px">
+                      <video id="videoPreview" autoplay playsinline style="width:100%;display:block"></video>
+                      <canvas id="photoCanvas" style="display:none;width:100%"></canvas>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <button class="btn-outline-custom" onclick="capturePhoto()"><i class="fas fa-camera"></i> Capturar</button>
+                      <button class="btn-outline-custom" id="btnResetPhoto" style="display:none" onclick="resetPhoto()"><i class="fas fa-redo"></i> Repetir</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-12"><button class="btn-asistencia btn-entrada" id="btnEntrada" onclick="registrarAsistencia('entrada')"><i class="fas fa-sign-in-alt"></i> Registrar Entrada</button></div>
+                  <div class="col-12"><button class="btn-asistencia btn-salida" id="btnSalida" onclick="registrarAsistencia('salida')" disabled><i class="fas fa-sign-out-alt"></i> Registrar Salida</button></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-5">
+              <div class="card-panel" id="horarioPanel">
+                <div class="card-panel-title"><i class="fas fa-user-clock"></i> Mi Horario</div>
+                <p class="text-muted" style="font-size:14px">Cargando...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HISTORIAL -->
+        <div class="page-section" id="page-historial">
+          <div class="d-flex gap-3 mb-4 flex-wrap align-items-end">
+            <div><label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">Mes</label>
+              <select id="filtroMes" class="form-control-custom" style="width:auto">
+                <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+              </select></div>
+            <div><label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">Año</label>
+              <select id="filtroAnio" class="form-control-custom" style="width:auto">
+                <option value="2024">2024</option><option value="2025">2025</option>
+                <option value="2026" selected>2026</option><option value="2027">2027</option>
+              </select></div>
+            <button class="btn-primary-custom" onclick="cargarHistorial()"><i class="fas fa-filter"></i> Filtrar</button>
+          </div>
+          <div class="row g-3 mb-4" id="historialStats"></div>
+          <div class="card-panel"><div class="card-panel-title"><i class="fas fa-table"></i> Detalle</div>
+            <div class="table-wrapper" id="historialTable"><p class="text-muted" style="font-size:14px">Selecciona período y filtra.</p></div></div>
+        </div>
+
+        <!-- REUNIÓN -->
+        <div class="page-section" id="page-reunion">
+          <div id="reunionJoinScreen">
+            <div style="max-width:480px;margin:50px auto;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:44px;text-align:center">
+              <div style="font-size:54px;color:var(--accent);margin-bottom:18px"><i class="fas fa-video"></i></div>
+              <h2 style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--text);margin-bottom:8px">Unirse a Reunión</h2>
+              <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Ingresa el código que te compartió el administrador</p>
+              <input type="text" id="codigoReunion" class="form-control-custom"
+                placeholder="Código de sala" maxlength="20"
+                style="font-size:22px;font-family:var(--font-head);font-weight:800;letter-spacing:4px;text-transform:uppercase;text-align:center;margin-bottom:12px">
+              <button onclick="buscarSala()" class="btn-primary-custom w-100" style="justify-content:center;padding:14px">
+                <i class="fas fa-door-open"></i> Entrar a la Sala
+              </button>
+              <div id="joinMsg" class="mt-3"></div>
+            </div>
+          </div>
+          <div id="reunionSalaScreen" style="display:none"></div>
+        </div>
+
+        <!-- COLABORADORES (admin) -->
+        <div class="page-section" id="page-colaboradores">
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="card-panel">
+                <div class="card-panel-title" id="formColabTitle"><i class="fas fa-user-plus"></i> Nuevo Colaborador</div>
+                <input type="hidden" id="colabEditId">
+                <div class="row g-2">
+                  <div class="col-6"><div class="form-field"><label>Nombre *</label><input type="text" id="cNombre" class="form-control-custom" maxlength="100"></div></div>
+                  <div class="col-6"><div class="form-field"><label>Apellido *</label><input type="text" id="cApellido" class="form-control-custom" maxlength="100"></div></div>
+                </div>
+                <div class="form-field"><label>Correo *</label><input type="email" id="cCorreo" class="form-control-custom"></div>
+                <div class="form-field"><label>Usuario *</label><input type="text" id="cUsuario" class="form-control-custom" maxlength="60"></div>
+                <div class="form-field"><label>Contraseña <span id="passHint">(requerida)</span></label><input type="password" id="cPassword" class="form-control-custom"></div>
+                <div class="form-field"><label>Rol</label>
+                  <select id="cRol" class="form-control-custom"><option value="colaborador">Colaborador</option><option value="admin">Administrador</option></select></div>
+                <div class="row g-2">
+                  <div class="col-6"><div class="form-field"><label>Departamento</label><input type="text" id="cDepto" class="form-control-custom" maxlength="100"></div></div>
+                  <div class="col-6"><div class="form-field"><label>Cargo</label><input type="text" id="cCargo" class="form-control-custom" maxlength="100"></div></div>
+                </div>
+                <div class="row g-2">
+                  <div class="col-4"><div class="form-field"><label>Entrada</label><input type="time" id="cEntrada" class="form-control-custom" value="09:00"></div></div>
+                  <div class="col-4"><div class="form-field"><label>Salida</label><input type="time" id="cSalida" class="form-control-custom" value="18:00"></div></div>
+                  <div class="col-4"><div class="form-field"><label>Tolerancia</label><input type="number" id="cTolerancia" class="form-control-custom" value="10" min="0" max="60"></div></div>
+                </div>
+                <div class="d-flex gap-2">
+                  <button class="btn-primary-custom" onclick="guardarColaborador()" id="btnGuardarColab"><i class="fas fa-user-plus"></i> Crear</button>
+                  <button class="btn-outline-custom" onclick="cancelarEditColab()" id="btnCancelarColab" style="display:none">Cancelar</button>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-8">
+              <div class="card-panel">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                  <div class="card-panel-title mb-0"><i class="fas fa-users"></i> Colaboradores</div>
+                  <input type="text" id="buscarColab" class="form-control-custom" placeholder="Buscar..." style="width:180px" oninput="cargarColaboradores()">
+                </div>
+                <div class="table-wrapper" id="tablaColaboradores"><p class="text-muted" style="font-size:14px">Cargando...</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRUPOS (admin) -->
+        <div class="page-section" id="page-grupos">
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="card-panel mb-4">
+                <div class="card-panel-title"><i class="fas fa-users-rectangle"></i> Nuevo Grupo</div>
+                <div class="form-field"><label>Nombre *</label><input type="text" id="gNombre" class="form-control-custom" placeholder="Ej: Equipo Backend"></div>
+                <div class="form-field"><label>Descripción</label><textarea id="gDesc" class="form-control-custom" rows="2"></textarea></div>
+                <div class="form-field"><label>Color</label><input type="color" id="gColor" class="form-control-custom" value="#6384ff" style="height:42px;padding:4px 8px"></div>
+                <button class="btn-primary-custom w-100" style="justify-content:center" onclick="crearGrupo()"><i class="fas fa-plus"></i> Crear Grupo</button>
+              </div>
+              <div id="sesionesActivasPanel"></div>
+            </div>
+            <div class="col-lg-8" id="listaGrupos"><p class="text-muted" style="font-size:14px">Cargando...</p></div>
+          </div>
+        </div>
+
+        <!-- CONTROL (admin) -->
+        <div class="page-section" id="page-control">
+          <div class="card-panel mb-4">
+            <div class="card-panel-title"><i class="fas fa-filter"></i> Filtros</div>
+            <div class="row g-3 align-items-end">
+              <div class="col-md-3"><div class="form-field mb-0"><label>Desde</label><input type="date" id="ctrlDesde" class="form-control-custom"></div></div>
+              <div class="col-md-3"><div class="form-field mb-0"><label>Hasta</label><input type="date" id="ctrlHasta" class="form-control-custom"></div></div>
+              <div class="col-md-4"><div class="form-field mb-0"><label>Colaborador</label><select id="ctrlUid" class="form-control-custom"><option value="">— Todos —</option></select></div></div>
+              <div class="col-md-2"><button class="btn-primary-custom w-100" onclick="cargarControl()"><i class="fas fa-search"></i> Buscar</button></div>
+            </div>
+          </div>
+          <div class="card-panel" id="controlTable"><p class="text-muted" style="font-size:14px">Aplica filtros para ver registros.</p></div>
+        </div>
+
+        <!-- REPORTES (admin) -->
+        <div class="page-section" id="page-reportes">
+          <div class="card-panel mb-4">
+            <div class="card-panel-title"><i class="fas fa-sliders"></i> Configurar Reporte</div>
+            <div class="row g-3 align-items-end">
+              <div class="col-md-2"><div class="form-field mb-0"><label>Tipo</label>
+                <select id="rTipo" class="form-control-custom"><option value="diario">Diario</option><option value="semanal">Semanal</option><option value="mensual" selected>Mensual</option></select></div></div>
+              <div class="col-md-2"><div class="form-field mb-0"><label>Mes</label>
+                <select id="rMes" class="form-control-custom">
+                  <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                  <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                  <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                  <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                </select></div></div>
+              <div class="col-md-2"><div class="form-field mb-0"><label>Año</label>
+                <select id="rAnio" class="form-control-custom"><option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option></select></div></div>
+              <div class="col-md-3"><div class="form-field mb-0"><label>Colaborador</label><select id="rUid" class="form-control-custom"><option value="">— Todos —</option></select></div></div>
+              <div class="col-md-3"><div class="d-flex gap-2">
+                <button class="btn-primary-custom" onclick="cargarReporte()"><i class="fas fa-chart-bar"></i> Generar</button>
+                <button class="btn-outline-custom" onclick="exportarCSV()"><i class="fas fa-file-excel"></i> CSV</button>
+              </div></div>
+            </div>
+          </div>
+          <div class="row g-3 mb-4" id="reporteStats"></div>
+          <div class="card-panel"><div class="card-panel-title"><i class="fas fa-table"></i> Datos</div>
+            <div class="table-wrapper" id="reporteTable"><p class="text-muted" style="font-size:14px">Genera un reporte.</p></div></div>
+        </div>
+
+        <!-- LOGS (admin) -->
+        <div class="page-section" id="page-logs">
+          <div class="row g-3 mb-4" id="logsStats"></div>
+          <div class="card-panel"><div class="card-panel-title"><i class="fas fa-shield-halved"></i> Registro de Accesos</div>
+            <div class="table-wrapper" id="logsTable"><p class="text-muted" style="font-size:14px">Cargando...</p></div></div>
+        </div>
+
+        <!-- PERFIL -->
+        <div class="page-section" id="page-perfil">
+          <div class="row g-4">
+            <div class="col-lg-6">
+              <div class="card-panel">
+                <div class="card-panel-title"><i class="fas fa-id-card"></i> Mi Perfil</div>
+                <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px">
+                  <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff" id="perfilAvatar">AS</div>
+                  <div><div style="font-family:var(--font-head);font-size:22px;font-weight:800" id="perfilNombre">Usuario</div>
+                    <div style="color:var(--muted);font-size:14px" id="perfilRol">Colaborador</div></div>
+                </div>
+                <table style="width:100%;font-size:14px">
+                  <tr><td style="color:var(--muted);padding:8px 0;border-bottom:1px solid var(--border)">Horario entrada</td>
+                      <td style="color:var(--text);font-weight:500;padding:8px 0;border-bottom:1px solid var(--border)" id="perfilEntrada">09:00</td></tr>
+                  <tr><td style="color:var(--muted);padding:8px 0">Horario salida</td>
+                      <td style="color:var(--text);font-weight:500;padding:8px 0" id="perfilSalida">18:00</td></tr>
+                </table>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="card-panel">
+                <div class="card-panel-title"><i class="fas fa-key"></i> Cambiar Contraseña</div>
+                <div id="perfilMsg" style="display:none;margin-bottom:16px"></div>
+                <div class="form-field"><label>Contraseña actual</label><input type="password" id="pPassActual" class="form-control-custom"></div>
+                <div class="form-field"><label>Nueva contraseña</label><input type="password" id="pPassNueva" class="form-control-custom"></div>
+                <div class="form-field"><label>Confirmar</label><input type="password" id="pPassConf" class="form-control-custom"></div>
+                <button class="btn-primary-custom" onclick="cambiarPassword()"><i class="fas fa-save"></i> Actualizar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /page-content -->
+    </main>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+</div><!-- /appScreen -->
+
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// ESTADO DE LA SESIÓN (almacenado en JS — no hay PHP aquí)
+// ════════════════════════════════════════════════════════════
+let SESSION = { uid: null, nombre: '', rol: '', hEntrada: '09:00', hSalida: '18:00', tolerancia: 10 };
+const AGORA_APP_ID = '9bb873d39ae348d6a52390e17d051939';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzvM9T9LYdRp3HG1fAMOh7_An_mazr-pKb3CxSUiUOxUxdTOJuf-BvFpuYAFpdSwtyXAA/exec';
+
+async function api(accion, data={}) {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ accion, ...data })
+    });
+    return await res.json();
+  } catch(err) {
+    return { ok: false, msg: 'Error de conexion: ' + err.message };
+  }
+}
+
+function limpiarHora(valor) {
+  if (!valor) return null;
+  const s = String(valor);
+  if (/^\d{1,2}:\d{2}/.test(s)) return s.slice(0, 5);
+  if (s.includes('T')) { const p = s.split('T')[1]; if (p) return p.slice(0, 5); }
+  return null;
+}
+
+// ════════════════════════════════════════════════════════════
+// UTILIDADES
+// ════════════════════════════════════════════════════════════
+function showLoading(v=true) { document.getElementById('loadingOverlay').style.display = v?'flex':'none'; }
+
+function showMsg(msg, tipo='success', cont='globalMsg') {
+  const el = document.getElementById(cont);
+  if (!el) return;
+  const cls = tipo==='success'?'alert-success-msg':tipo==='danger'?'alert-danger-msg':'alert-warning-msg';
+  el.innerHTML = `<div class="${cls}"><i class="fas fa-${tipo==='success'?'check-circle':'exclamation-circle'}"></i> ${msg}</div>`;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display='none'; el.innerHTML=''; }, 4000);
+}
+
+function updateClock() {
+  const n=new Date();
+  const t=n.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const d=n.toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const tc=document.getElementById('topbarClock');
+  const rg=document.getElementById('relojGrande');
+  const fg=document.getElementById('fechaGrande');
+  if(tc) tc.textContent=t+' — '+d.charAt(0).toUpperCase()+d.slice(1);
+  if(rg) rg.textContent=t;
+  if(fg) fg.textContent=d.charAt(0).toUpperCase()+d.slice(1);
+}
+updateClock(); setInterval(updateClock,1000);
+
+// ════════════════════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ════════════════════════════════════════════════════════════
+function togglePass() {
+  const i=document.getElementById('loginPassword');
+  const e=document.getElementById('eyeIcon');
+  i.type=i.type==='password'?'text':'password';
+  e.className=i.type==='password'?'fas fa-eye':'fas fa-eye-slash';
+}
+
+async function doLogin() {
+  const usuario = document.getElementById('loginUsuario').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('btnLogin');
+  const err = document.getElementById('loginError');
+  if (!usuario||!password) { err.textContent='Ingresa usuario y contraseña.'; err.style.display='flex'; return; }
+  btn.disabled=true;
+  document.getElementById('btnLoginText').textContent='Verificando...';
+  showLoading(true);
+  const res = await api('login', { usuario, password });
+  showLoading(false);
+  btn.disabled=false;
+  document.getElementById('btnLoginText').textContent='Ingresar al Sistema';
+  if (res.ok) {
+    SESSION = { uid: res.user.id, nombre: res.user.nombre, rol: res.user.rol,
+      hEntrada: limpiarHora(res.user.hora_entrada)||'09:00', hSalida: limpiarHora(res.user.hora_salida)||'18:00',
+      tolerancia: res.user.tolerancia_min||10 };
+    // Guardar en sessionStorage para navegación
+    sessionStorage.setItem('session', JSON.stringify(SESSION));
+    mostrarApp();
+  } else {
+    err.innerHTML='<i class="fas fa-circle-exclamation"></i> '+(res.msg||'Error');
+    err.style.display='flex';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('session');
+  SESSION = { uid:null, nombre:'', rol:'', hEntrada:'09:00', hSalida:'18:00', tolerancia:10 };
+  document.getElementById('loginScreen').style.display='block';
+  document.getElementById('appScreen').style.display='none';
+}
+
+function mostrarApp() {
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  const initials = SESSION.nombre.split(' ').map(w=>w[0].toUpperCase()).slice(0,2).join('');
+  document.getElementById('sidebarInitials').textContent = initials;
+  document.getElementById('sidebarNombre').textContent   = SESSION.nombre;
+  document.getElementById('sidebarRol').textContent      = SESSION.rol==='admin'?'Administrador':'Colaborador';
+  document.getElementById('perfilAvatar').textContent    = initials;
+  document.getElementById('perfilNombre').textContent    = SESSION.nombre;
+  document.getElementById('perfilRol').textContent       = SESSION.rol==='admin'?'Administrador':'Colaborador';
+  document.getElementById('perfilEntrada').textContent   = SESSION.hEntrada;
+  document.getElementById('perfilSalida').textContent    = SESSION.hSalida;
+  if (SESSION.rol==='admin') document.getElementById('adminNav').style.display='block';
+  // Fechas por defecto
+  const hoy = new Date().toISOString().slice(0,10);
+  const ctrlDesde = document.getElementById('ctrlDesde');
+  const ctrlHasta = document.getElementById('ctrlHasta');
+  if(ctrlDesde) ctrlDesde.value = hoy;
+  if(ctrlHasta) ctrlHasta.value = hoy;
+  // Mes actual en selects
+  const mesActual = new Date().getMonth()+1;
+  const fMes = document.getElementById('filtroMes');
+  const rMes = document.getElementById('rMes');
+  if(fMes) fMes.value = mesActual;
+  if(rMes) rMes.value = mesActual;
+  showPage('dashboard');
+}
+
+// Restaurar sesión si existe
+window.addEventListener('load', () => {
+  const saved = sessionStorage.getItem('session');
+  if (saved) {
+    SESSION = JSON.parse(saved);
+    if (SESSION.uid) { mostrarApp(); return; }
+  }
+  document.getElementById('loginScreen').style.display='block';
+});
+
+document.addEventListener('keypress', e => { if(e.key==='Enter' && document.getElementById('loginScreen').style.display!=='none') doLogin(); });
+
+// ════════════════════════════════════════════════════════════
+// NAVEGACIÓN
+// ════════════════════════════════════════════════════════════
+function showPage(page) {
+  document.querySelectorAll('.page-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const sec=document.getElementById('page-'+page);
+  const nav=document.getElementById('nav-'+page);
+  if(sec) sec.classList.add('active');
+  if(nav) nav.classList.add('active');
+  const titles={dashboard:'Dashboard',asistencia:'Registrar Asistencia',historial:'Mi Historial',
+    reunion:'Sala de Reunión',colaboradores:'Colaboradores',grupos:'Grupos y Reuniones',
+    control:'Control de Asistencia',reportes:'Reportes',logs:'Logs de Acceso',perfil:'Mi Perfil'};
+  document.getElementById('topbarTitle').textContent = titles[page]||page;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+  if(page==='dashboard')     cargarDashboard();
+  if(page==='asistencia')    cargarEstadoAsistencia();
+  if(page==='historial')     cargarHistorial();
+  if(page==='colaboradores') cargarColaboradores();
+  if(page==='grupos')        cargarGrupos();
+  if(page==='control')       cargarSelectColabs('ctrlUid');
+  if(page==='reportes')      cargarSelectColabs('rUid');
+  if(page==='logs')          cargarLogs();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+
+// ════════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════════
+async function cargarDashboard() {
+  const cont = document.getElementById('dashboardContent');
+  const accion = SESSION.rol==='admin'?'getStatsAdmin':'getStatsColaborador';
+  const res = await api(accion, {usuario_id: SESSION.uid});
+  if(!res.ok) return;
+  if(SESSION.rol==='admin') {
+    cont.innerHTML=`
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-users"></i></div><div class="stat-value">${res.total_colaboradores||0}</div><div class="stat-label">Colaboradores Activos</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-circle-check"></i></div><div class="stat-value">${res.presentes_hoy||0}</div><div class="stat-label">Presentes Hoy</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-clock-rotate-left"></i></div><div class="stat-value">${res.tardanzas_hoy||0}</div><div class="stat-label">Tardanzas Hoy</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-red"><i class="fas fa-user-xmark"></i></div><div class="stat-value">${Math.max(0,res.ausentes_hoy||0)}</div><div class="stat-label">Ausentes Hoy</div></div></div>
+      </div>
+      <div class="card-panel"><div class="card-panel-title"><i class="fas fa-list-check"></i> Últimas Asistencias</div>
+        <div class="table-wrapper">${renderTabla(res.ultimas_asistencias||[])}</div></div>`;
+  } else {
+    const horasH=res.horas_hoy>0?Math.floor(res.horas_hoy/60)+'h '+Math.floor(res.horas_hoy%60)+'m':'--';
+    cont.innerHTML=`
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon ${res.entrada_hoy?'icon-green':'icon-red'}"><i class="fas fa-sign-in-alt"></i></div><div class="stat-value">${res.entrada_hoy?String(res.entrada_hoy).slice(0,5):'--:--'}</div><div class="stat-label">Entrada Hoy</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-sign-out-alt"></i></div><div class="stat-value">${res.salida_hoy?String(res.salida_hoy).slice(0,5):'--:--'}</div><div class="stat-label">Salida Hoy</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-purple"><i class="fas fa-hourglass-half"></i></div><div class="stat-value">${horasH}</div><div class="stat-label">Horas Hoy</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-calendar-days"></i></div><div class="stat-value">${res.dias_mes||0}</div><div class="stat-label">Días Mes</div></div></div>
+      </div>
+      ${!res.entrada_hoy||!res.salida_hoy?`<div class="card-panel mb-4" style="border-color:rgba(99,132,255,.3);background:rgba(99,132,255,.05)"><div class="d-flex align-items-center justify-content-between flex-wrap gap-3"><div><div class="card-panel-title mb-1"><i class="fas fa-clock"></i> Registro Pendiente</div><p style="color:var(--muted);font-size:14px;margin:0">${!res.entrada_hoy?'Aún no registras tu entrada.':'Recuerda registrar tu salida.'}</p></div><button class="btn-primary-custom" onclick="showPage('asistencia')"><i class="fas fa-fingerprint"></i> Registrar Ahora</button></div></div>`:''}
+      <div class="card-panel"><div class="card-panel-title"><i class="fas fa-history"></i> Últimos Registros</div><div class="table-wrapper">${renderTabla(res.ultimos_registros||[])}</div></div>`;
+  }
+}
+
+function renderTabla(rows) {
+  if(!rows||!rows.length) return '<p class="text-muted p-3">Sin registros</p>';
+  const isAdm = SESSION.rol==='admin';
+  return `<table class="table-custom"><thead><tr>${isAdm?'<th>Colaborador</th>':''}<th>Fecha</th><th>Tipo</th><th>Hora</th><th>Estado</th></tr></thead><tbody>`+
+    rows.map(r=>`<tr>
+      ${isAdm?`<td><strong>${r.nombre||''} ${r.apellido||''}</strong></td>`:''}
+      <td>${r.fecha||''}</td>
+      <td><span class="badge-custom ${r.tipo==='entrada'?'badge-green':'badge-blue'}">${(r.tipo||'').charAt(0).toUpperCase()+(r.tipo||'').slice(1)}</span></td>
+      <td style="font-family:var(--font-head);font-size:18px;font-weight:700">${String(r.hora||'').slice(0,5)}</td>
+      <td>${parseInt(r.tardanza)?`<span class="badge-custom badge-orange">+${r.minutos_tardanza}min</span>`:'<span class="badge-custom badge-green">✓ OK</span>'}</td>
+    </tr>`).join('')+'</tbody></table>';
+}
+
+// ════════════════════════════════════════════════════════════
+// ASISTENCIA
+// ════════════════════════════════════════════════════════════
+let gpsLat=0,gpsLng=0,gpsText='',fotoCaptured=false,localStream=null;
+
+async function cargarEstadoAsistencia() {
+  const res = await api('getEstadoHoy', {usuario_id: SESSION.uid});
+  if(!res.ok) return;
+  const pills=document.getElementById('estadoPills');
+  const btnE=document.getElementById('btnEntrada');
+  const btnS=document.getElementById('btnSalida');
+  if(res.entrada_registrada){
+    btnE.disabled=true; btnE.innerHTML='<i class="fas fa-check"></i> Entrada registrada ('+String(res.hora_entrada||'').slice(0,5)+')';
+    pills.children[0].className='status-pill status-ok'; pills.children[0].innerHTML='<i class="fas fa-check-circle"></i> Entrada: '+String(res.hora_entrada||'').slice(0,5);
+  }
+  if(res.salida_registrada){
+    btnS.disabled=true; btnS.innerHTML='<i class="fas fa-check"></i> Salida registrada ('+String(res.hora_salida||'').slice(0,5)+')';
+    pills.children[1].className='status-pill status-ok';
+  } else if(res.entrada_registrada) { btnS.disabled=false; }
+  // Horario
+  const hp=document.getElementById('horarioPanel');
+  hp.innerHTML=`<div class="card-panel-title"><i class="fas fa-user-clock"></i> Mi Horario</div>
+    <div class="row g-2">
+      <div class="col-6"><div style="background:rgba(34,211,168,.06);border:1px solid rgba(34,211,168,.15);border-radius:10px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Entrada</div><div style="font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--success)">${SESSION.hEntrada}</div></div></div>
+      <div class="col-6"><div style="background:rgba(99,132,255,.06);border:1px solid rgba(99,132,255,.15);border-radius:10px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Salida</div><div style="font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--accent)">${SESSION.hSalida}</div></div></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin-top:12px"><i class="fas fa-clock" style="color:var(--warning)"></i> Tolerancia: <strong>${SESSION.tolerancia} minutos</strong></p>`;
+  // GPS
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      gpsLat=pos.coords.latitude; gpsLng=pos.coords.longitude;
+      gpsText=`Lat: ${gpsLat.toFixed(5)}, Lng: ${gpsLng.toFixed(5)} (±${Math.round(pos.coords.accuracy)}m)`;
+      document.getElementById('gpsInfo').innerHTML='<i class="fas fa-location-dot"></i> '+gpsText;
+    },err=>{ document.getElementById('gpsInfo').innerHTML='<i class="fas fa-location-slash"></i> Ubicación no disponible'; },{enableHighAccuracy:true,timeout:10000});
+  }
+}
+
+async function registrarAsistencia(tipo) {
+  const camEnabled=document.getElementById('enableCamera').checked;
+  if(camEnabled&&!fotoCaptured){if(!confirm('Sin foto. ¿Continuar?'))return;}
+  showLoading(true);
+  let fotoPath='';
+  if(fotoCaptured){const c=document.getElementById('photoCanvas'); fotoPath=c.toDataURL('image/jpeg',.7);}
+  const res=await api('registrarAsistencia',{usuario_id:SESSION.uid,tipo,latitud:gpsLat,longitud:gpsLng,ubicacion_texto:gpsText,foto_path:fotoPath});
+  showLoading(false);
+  if(res.ok){showMsg(res.msg||'Registrado correctamente','success'); await cargarEstadoAsistencia(); cargarDashboard();}
+  else showMsg(res.msg||'Error','danger');
+}
+
+async function toggleCameraAsist(){
+  const enabled=document.getElementById('enableCamera').checked;
+  const sec=document.getElementById('cameraSection');
+  if(enabled){sec.style.display='block';
+    try{localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});document.getElementById('videoPreview').srcObject=localStream;}
+    catch(e){alert('No se pudo acceder a la cámara: '+e.message);document.getElementById('enableCamera').checked=false;sec.style.display='none';}
+  }else{sec.style.display='none';if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}}
+}
+function capturePhoto(){const v=document.getElementById('videoPreview');const c=document.getElementById('photoCanvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);v.style.display='none';c.style.display='block';document.getElementById('btnResetPhoto').style.display='inline-flex';fotoCaptured=true;if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}}
+function resetPhoto(){document.getElementById('videoPreview').style.display='block';document.getElementById('photoCanvas').style.display='none';document.getElementById('btnResetPhoto').style.display='none';fotoCaptured=false;toggleCameraAsist();}
+
+// ════════════════════════════════════════════════════════════
+// HISTORIAL
+// ════════════════════════════════════════════════════════════
+async function cargarHistorial(){
+  const mes=document.getElementById('filtroMes').value;
+  const anio=document.getElementById('filtroAnio').value;
+  showLoading(true);
+  const res=await api('getAsistenciasMes',{usuario_id:SESSION.uid,mes,anio});
+  showLoading(false);
+  if(!res.ok)return;
+  const meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const r=res.resumen||{};
+  document.getElementById('historialStats').innerHTML=`
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-calendar-check"></i></div><div class="stat-value">${r.dias_presentes||0}</div><div class="stat-label">Días Presentes</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-purple"><i class="fas fa-hourglass"></i></div><div class="stat-value">${r.total_horas||0}h ${r.total_minutos||0}m</div><div class="stat-label">Total Horas</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-clock-rotate-left"></i></div><div class="stat-value">${r.tardanzas||0}</div><div class="stat-label">Tardanzas</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-calendar-days"></i></div><div class="stat-value">${meses[parseInt(mes)]}</div><div class="stat-label">${anio}</div></div></div>`;
+  const rows=res.asistencias||[];
+  if(!rows.length){document.getElementById('historialTable').innerHTML='<p class="text-muted p-3">Sin registros.</p>';return;}
+  const pf={};
+  rows.forEach(r=>{if(!pf[r.fecha])pf[r.fecha]=[];pf[r.fecha].push(r);});
+  let html=`<table class="table-custom"><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th><th>Estado</th></tr></thead><tbody>`;
+  Object.keys(pf).sort().reverse().forEach(f=>{
+    const regs=pf[f];const e=regs.find(r=>r.tipo==='entrada');const s=regs.find(r=>r.tipo==='salida');
+    let seg=0;
+    if(e&&s){const[he,me]=String(e.hora).split(':').map(Number);const[hs,ms]=String(s.hora).split(':').map(Number);seg=(hs*3600+ms*60)-(he*3600+me*60);}
+    const estado=!e?'<span class="badge-custom badge-red">Falta</span>':parseInt(e.tardanza)?`<span class="badge-custom badge-orange">+${e.minutos_tardanza}min tarde</span>`:'<span class="badge-custom badge-green">✓ A tiempo</span>';
+    html+=`<tr><td><strong>${f}</strong></td><td>${e?String(e.hora).slice(0,5):'—'}</td><td>${s?String(s.hora).slice(0,5):'—'}</td><td>${seg>0?Math.floor(seg/3600)+'h '+Math.floor((seg%3600)/60)+'m':'—'}</td><td>${estado}</td></tr>`;
+  });
+  document.getElementById('historialTable').innerHTML=html+'</tbody></table>';
+}
+
+// ════════════════════════════════════════════════════════════
+// PERFIL
+// ════════════════════════════════════════════════════════════
+async function cambiarPassword(){
+  const a=document.getElementById('pPassActual').value;
+  const n=document.getElementById('pPassNueva').value;
+  const c=document.getElementById('pPassConf').value;
+  if(!a||!n||!c){showMsg('Completa todos los campos','warning','perfilMsg');return;}
+  if(n!==c){showMsg('Las contraseñas no coinciden','danger','perfilMsg');return;}
+  if(n.length<8){showMsg('Mínimo 8 caracteres','warning','perfilMsg');return;}
+  const res=await api('cambiarPassword',{id:SESSION.uid,pass_actual:a,pass_nueva:n});
+  document.getElementById('perfilMsg').style.display='block';
+  showMsg(res.msg||(res.ok?'Actualizado':'Error'),res.ok?'success':'danger','perfilMsg');
+  if(res.ok){document.getElementById('pPassActual').value='';document.getElementById('pPassNueva').value='';document.getElementById('pPassConf').value='';}
+}
+
+// ════════════════════════════════════════════════════════════
+// COLABORADORES (admin)
+// ════════════════════════════════════════════════════════════
+let colabData=[];
+async function cargarColaboradores(){
+  const buscar=document.getElementById('buscarColab').value;
+  const res=await api('getUsuarios',{buscar});
+  if(!res.ok)return;
+  colabData=res.usuarios||[];
+  const tbody=colabData.map(u=>`<tr>
+    <td><div style="font-weight:600;color:var(--text)">${u.nombre||''} ${u.apellido||''}</div><small style="color:var(--muted)">${u.correo||''}</small></td>
+    <td><code style="color:var(--accent);font-size:13px">${u.usuario||''}</code></td>
+    <td><span class="badge-custom ${u.rol==='admin'?'badge-purple':'badge-blue'}">${u.rol==='admin'?'Admin':'Colaborador'}</span></td>
+    <td style="font-size:13px;color:var(--text2)">${String(u.hora_entrada||'').slice(0,5)} – ${String(u.hora_salida||'').slice(0,5)}</td>
+    <td><span class="badge-custom ${parseInt(u.activo)?'badge-green':'badge-gray'}">${parseInt(u.activo)?'Activo':'Inactivo'}</span></td>
+    <td><div class="d-flex gap-1">
+      <button class="topbar-btn" style="width:30px;height:30px;font-size:12px" onclick="editarColab(${u.id})"><i class="fas fa-pen"></i></button>
+      <button class="topbar-btn" style="width:30px;height:30px;font-size:12px;color:${parseInt(u.activo)?'var(--warning)':'var(--success)'}" onclick="toggleColab(${u.id})"><i class="fas fa-${parseInt(u.activo)?'ban':'check'}"></i></button>
+      <button class="topbar-btn" style="width:30px;height:30px;font-size:12px;color:var(--danger)" onclick="eliminarColab(${u.id},'${u.nombre}')"><i class="fas fa-trash"></i></button>
+    </div></td></tr>`).join('');
+  document.getElementById('tablaColaboradores').innerHTML=colabData.length?
+    `<table class="table-custom"><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Horario</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${tbody}</tbody></table>`:
+    '<p class="text-muted p-3">Sin colaboradores.</p>';
+  ['ctrlUid','rUid'].forEach(id=>{
+    const sel=document.getElementById(id); if(!sel)return;
+    const val=sel.value;
+    sel.innerHTML='<option value="">— Todos —</option>'+colabData.filter(u=>u.rol==='colaborador').map(u=>`<option value="${u.id}">${u.nombre} ${u.apellido}</option>`).join('');
+    sel.value=val;
+  });
+}
+
+async function cargarSelectColabs(selectId='ctrlUid'){
+  const res=await api('getUsuarios',{});
+  if(!res.ok)return;
+  colabData=res.usuarios||[];
+  const sel=document.getElementById(selectId); if(!sel)return;
+  sel.innerHTML='<option value="">— Todos —</option>'+colabData.filter(u=>u.rol==='colaborador').map(u=>`<option value="${u.id}">${u.nombre} ${u.apellido}</option>`).join('');
+}
+
+async function guardarColaborador(){
+  const id=document.getElementById('colabEditId').value;
+  const data={nombre:document.getElementById('cNombre').value,apellido:document.getElementById('cApellido').value,
+    correo:document.getElementById('cCorreo').value,usuario:document.getElementById('cUsuario').value,
+    password:document.getElementById('cPassword').value,rol:document.getElementById('cRol').value,
+    departamento:document.getElementById('cDepto').value,cargo:document.getElementById('cCargo').value,
+    hora_entrada:document.getElementById('cEntrada').value,hora_salida:document.getElementById('cSalida').value,
+    tolerancia_min:document.getElementById('cTolerancia').value};
+  if(!data.nombre||!data.apellido||!data.correo||!data.usuario){showMsg('Completa los campos obligatorios','warning');return;}
+  showLoading(true);
+  const res=await api(id?'editarUsuario':'crearUsuario',id?{...data,id}:data);
+  showLoading(false);
+  if(res.ok){showMsg(id?'Colaborador actualizado':'Colaborador creado','success');cancelarEditColab();cargarColaboradores();}
+  else showMsg(res.msg||'Error','danger');
+}
+
+function editarColab(id){
+  const u=colabData.find(c=>parseInt(c.id)===parseInt(id)); if(!u)return;
+  document.getElementById('colabEditId').value=u.id;
+  document.getElementById('cNombre').value=u.nombre||''; document.getElementById('cApellido').value=u.apellido||'';
+  document.getElementById('cCorreo').value=u.correo||''; document.getElementById('cUsuario').value=u.usuario||'';
+  document.getElementById('cPassword').value=''; document.getElementById('cRol').value=u.rol||'colaborador';
+  document.getElementById('cDepto').value=u.departamento||''; document.getElementById('cCargo').value=u.cargo||'';
+  document.getElementById('cEntrada').value=String(u.hora_entrada||'09:00').slice(0,5);
+  document.getElementById('cSalida').value=String(u.hora_salida||'18:00').slice(0,5);
+  document.getElementById('cTolerancia').value=u.tolerancia_min||10;
+  document.getElementById('passHint').textContent='(dejar vacío para no cambiar)';
+  document.getElementById('formColabTitle').innerHTML='<i class="fas fa-user-pen"></i> Editar Colaborador';
+  document.getElementById('btnGuardarColab').innerHTML='<i class="fas fa-save"></i> Guardar';
+  document.getElementById('btnCancelarColab').style.display='inline-flex';
+}
+
+function cancelarEditColab(){
+  document.getElementById('colabEditId').value='';
+  ['cNombre','cApellido','cCorreo','cUsuario','cPassword','cDepto','cCargo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cRol').value='colaborador'; document.getElementById('cEntrada').value='09:00';
+  document.getElementById('cSalida').value='18:00'; document.getElementById('cTolerancia').value='10';
+  document.getElementById('passHint').textContent='(requerida)';
+  document.getElementById('formColabTitle').innerHTML='<i class="fas fa-user-plus"></i> Nuevo Colaborador';
+  document.getElementById('btnGuardarColab').innerHTML='<i class="fas fa-user-plus"></i> Crear';
+  document.getElementById('btnCancelarColab').style.display='none';
+}
+
+async function toggleColab(id){const res=await api('toggleUsuario',{id});if(res.ok)cargarColaboradores();}
+async function eliminarColab(id,nombre){
+  if(!confirm(`¿Eliminar a ${nombre}?`))return;
+  const res=await api('eliminarUsuario',{id});
+  if(res.ok){showMsg('Colaborador eliminado','success');cargarColaboradores();}
+}
+
+// ════════════════════════════════════════════════════════════
+// GRUPOS
+// ════════════════════════════════════════════════════════════
+async function cargarGrupos(){
+  const res=await api('getGrupos');
+  if(!res.ok)return;
+  const grupos=res.grupos||[];
+  const colRes=await api('getUsuarios',{});
+  const todos=colRes.usuarios||[];
+  const lista=document.getElementById('listaGrupos');
+  if(!grupos.length){lista.innerHTML='<div class="card-panel text-center py-5"><i class="fas fa-users" style="font-size:48px;color:var(--muted);display:block;margin-bottom:16px"></i><p class="text-muted">Sin grupos. Crea el primero.</p></div>';return;}
+  lista.innerHTML=grupos.map(g=>{
+    const miembros=g.miembros||[];
+    const idsEnGrupo=miembros.map(m=>parseInt(m.id));
+    const disponibles=todos.filter(u=>u.rol==='colaborador'&&!idsEnGrupo.includes(parseInt(u.id)));
+    return `<div class="card-panel mb-3" style="border-top:4px solid ${g.color}">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:46px;height:46px;border-radius:13px;background:${g.color}22;border:2px solid ${g.color};display:flex;align-items:center;justify-content:center;color:${g.color};font-size:20px"><i class="fas fa-users"></i></div>
+          <div><div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text)">${g.nombre}</div><div style="font-size:13px;color:var(--muted)">${g.descripcion||''}</div></div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-primary-custom" style="font-size:13px;padding:8px 14px" onclick="iniciarReunion(${g.id},'${g.nombre}')"><i class="fas fa-video"></i> Iniciar Reunión</button>
+          <button class="btn-danger-custom" style="padding:8px 12px" onclick="eliminarGrupo(${g.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        ${miembros.map(m=>`<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:6px 12px">
+          <div style="width:28px;height:28px;border-radius:50%;background:${g.color}33;color:${g.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${(m.nombre||'')[0]}${(m.apellido||'')[0]}</div>
+          <div><div style="font-size:13px;font-weight:600;color:var(--text)">${m.nombre} ${m.apellido}</div></div>
+          <button onclick="quitarMiembro(${g.id},${m.id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;margin-left:4px"><i class="fas fa-times"></i></button>
+        </div>`).join('')}
+        ${miembros.length===0?'<span style="font-size:13px;color:var(--muted)">Sin miembros aún</span>':''}
+      </div>
+      <div class="d-flex gap-2">
+        <select id="selMiembro${g.id}" class="form-control-custom" style="flex:1">
+          <option value="">— Agregar colaborador —</option>
+          ${disponibles.map(u=>`<option value="${u.id}">${u.nombre} ${u.apellido}</option>`).join('')}
+        </select>
+        <button class="btn-outline-custom" onclick="agregarMiembro(${g.id})"><i class="fas fa-plus"></i> Agregar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function crearGrupo(){
+  const nombre=document.getElementById('gNombre').value.trim();
+  if(!nombre){showMsg('El nombre es requerido','warning');return;}
+  const res=await api('crearGrupo',{nombre,descripcion:document.getElementById('gDesc').value,color:document.getElementById('gColor').value,creado_por:SESSION.uid});
+  if(res.ok){showMsg('Grupo creado','success');document.getElementById('gNombre').value='';cargarGrupos();}
+}
+async function eliminarGrupo(id){if(!confirm('¿Eliminar este grupo?'))return;const res=await api('eliminarGrupo',{id});if(res.ok){showMsg('Eliminado','success');cargarGrupos();}}
+async function agregarMiembro(grupoId){const uid=document.getElementById('selMiembro'+grupoId).value;if(!uid)return;const res=await api('agregarMiembro',{grupo_id:grupoId,usuario_id:uid});if(res.ok){showMsg('Miembro agregado','success');cargarGrupos();}}
+async function quitarMiembro(grupoId,userId){const res=await api('quitarMiembro',{grupo_id:grupoId,usuario_id:userId});if(res.ok){showMsg('Removido','success');cargarGrupos();}}
+async function iniciarReunion(grupoId,grupoNombre){
+  const nombre=prompt('Nombre de la reunión:','Reunión '+new Date().toLocaleDateString('es-PE'));
+  if(!nombre)return;
+  const res=await api('crearSesion',{grupo_id:grupoId,nombre,creado_por:SESSION.uid});
+  if(res.ok){showMsg(`Sala creada — Código: <strong>${res.codigo}</strong>`,'success');cargarGrupos();
+    if(confirm(`Sala: ${res.codigo}\n¿Entrar ahora?`))abrirSala(res.id,res.codigo,nombre,res.agora_channel);}
+}
+
+// ════════════════════════════════════════════════════════════
+// CONTROL ASISTENCIA
+// ════════════════════════════════════════════════════════════
+async function cargarControl(){
+  const desde=document.getElementById('ctrlDesde').value;
+  const hasta=document.getElementById('ctrlHasta').value;
+  const uid=document.getElementById('ctrlUid').value;
+  showLoading(true);
+  const res=await api('getAsistenciasRango',{desde,hasta,usuario_id:uid});
+  showLoading(false);
+  if(!res.ok)return;
+  const rows=res.asistencias||[];
+  document.getElementById('controlTable').innerHTML=`<div class="card-panel-title"><i class="fas fa-list-check"></i> Registros (${rows.length})</div>`+
+    (rows.length?`<div class="table-wrapper"><table class="table-custom"><thead><tr><th>Colaborador</th><th>Fecha</th><th>Tipo</th><th>Hora</th><th>Estado</th><th>IP</th></tr></thead><tbody>`+
+    rows.map(r=>`<tr><td><strong>${r.nombre||''} ${r.apellido||''}</strong><br><small style="color:var(--muted)">${r.departamento||''}</small></td><td>${r.fecha||''}</td>
+      <td><span class="badge-custom ${r.tipo==='entrada'?'badge-green':'badge-blue'}">${r.tipo||''}</span></td>
+      <td style="font-family:var(--font-head);font-weight:700;font-size:18px">${String(r.hora||'').slice(0,5)}</td>
+      <td>${parseInt(r.tardanza)?`<span class="badge-custom badge-orange">+${r.minutos_tardanza}min</span>`:'<span class="badge-custom badge-green">Puntual</span>'}</td>
+      <td><code style="font-size:11px;color:var(--muted)">${r.ip_address||'—'}</code></td></tr>`).join('')+'</tbody></table></div>':
+    '<p class="text-muted p-3">Sin registros.</p>');
+}
+
+// ════════════════════════════════════════════════════════════
+// REPORTES
+// ════════════════════════════════════════════════════════════
+let reporteData=[];
+async function cargarReporte(){
+  const tipo=document.getElementById('rTipo').value;
+  const mes=document.getElementById('rMes').value;
+  const anio=document.getElementById('rAnio').value;
+  const uid=document.getElementById('rUid').value;
+  showLoading(true);
+  const res=await api('getReporte',{tipo,mes,anio,usuario_id:uid});
+  showLoading(false);
+  if(!res.ok)return;
+  reporteData=res.asistencias||[];
+  const total=reporteData.length;
+  const entradas=reporteData.filter(r=>r.tipo==='entrada').length;
+  const salidas=reporteData.filter(r=>r.tipo==='salida').length;
+  const tardanzas=reporteData.filter(r=>parseInt(r.tardanza)).length;
+  document.getElementById('reporteStats').innerHTML=`
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-list"></i></div><div class="stat-value">${total}</div><div class="stat-label">Total Registros</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-sign-in-alt"></i></div><div class="stat-value">${entradas}</div><div class="stat-label">Entradas</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-sign-out-alt"></i></div><div class="stat-value">${salidas}</div><div class="stat-label">Salidas</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-clock-rotate-left"></i></div><div class="stat-value">${tardanzas}</div><div class="stat-label">Tardanzas</div></div></div>`;
+  document.getElementById('reporteTable').innerHTML=total?
+    `<table class="table-custom"><thead><tr><th>#</th><th>Colaborador</th><th>Fecha</th><th>Tipo</th><th>Hora</th><th>Estado</th></tr></thead><tbody>`+
+    reporteData.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.nombre||''} ${r.apellido||''}</strong></td><td>${r.fecha||''}</td>
+      <td><span class="badge-custom ${r.tipo==='entrada'?'badge-green':'badge-blue'}">${r.tipo||''}</span></td>
+      <td style="font-family:var(--font-head);font-weight:700">${String(r.hora||'').slice(0,5)}</td>
+      <td>${parseInt(r.tardanza)?`<span class="badge-custom badge-orange">+${r.minutos_tardanza}min</span>`:'<span class="badge-custom badge-green">Puntual</span>'}</td></tr>`).join('')+'</tbody></table>':
+    '<p class="text-muted p-3">Sin registros.</p>';
+}
+
+function exportarCSV(){
+  if(!reporteData.length){showMsg('Genera un reporte primero','warning');return;}
+  const bom='\uFEFF';
+  const header='Nombre;Apellido;Departamento;Fecha;Tipo;Hora;Tardanza;Min.Tardanza\n';
+  const rows=reporteData.map(r=>[r.nombre,r.apellido,r.departamento,r.fecha,r.tipo,r.hora,parseInt(r.tardanza)?'Sí':'No',r.minutos_tardanza].join(';')).join('\n');
+  const blob=new Blob([bom+header+rows],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='reporte_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+// ════════════════════════════════════════════════════════════
+// LOGS
+// ════════════════════════════════════════════════════════════
+async function cargarLogs(){
+  const res=await api('getLogs',{pagina:1});
+  if(!res.ok)return;
+  const logs=res.logs||[];
+  const exit=logs.filter(l=>l.resultado==='exitoso').length;
+  const fall=logs.filter(l=>l.resultado==='fallido').length;
+  const bloq=logs.filter(l=>l.resultado==='bloqueado').length;
+  document.getElementById('logsStats').innerHTML=`
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-check-circle"></i></div><div class="stat-value">${exit}</div><div class="stat-label">Exitosos</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-red"><i class="fas fa-times-circle"></i></div><div class="stat-value">${fall}</div><div class="stat-label">Fallidos</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-ban"></i></div><div class="stat-value">${bloq}</div><div class="stat-label">Bloqueados</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-database"></i></div><div class="stat-value">${res.total||0}</div><div class="stat-label">Total</div></div></div>`;
+  document.getElementById('logsTable').innerHTML=logs.length?
+    `<table class="table-custom"><thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>IP</th><th>Resultado</th><th>Mensaje</th></tr></thead><tbody>`+
+    logs.map(l=>{
+      const badge=l.resultado==='exitoso'?'badge-green':l.resultado==='fallido'?'badge-red':'badge-orange';
+      return `<tr><td style="font-size:13px;white-space:nowrap">${l.creado_en||''}</td><td><strong>${l.usuario_str||''}</strong></td>
+        <td><code style="font-size:11px;color:var(--muted)">${l.ip_address||''}</code></td>
+        <td><span class="badge-custom ${badge}">${l.resultado||''}</span></td>
+        <td style="font-size:13px;color:var(--muted)">${l.mensaje||'—'}</td></tr>`;}).join('')+'</tbody></table>':
+    '<p class="text-muted p-3">Sin registros.</p>';
+}
+
+// ════════════════════════════════════════════════════════════
+// SALA DE REUNIÓN CON AGORA
+// ════════════════════════════════════════════════════════════
+let agoraClient=null,localTracks={audio:null,video:null},micOn=true,camOn=true,salaActiva=null,checkinSec=3600,checkinTotal=3600;
+
+async function buscarSala(){
+  const codigo=document.getElementById('codigoReunion').value.trim().toUpperCase();
+  if(!codigo){document.getElementById('joinMsg').innerHTML='<div class="alert-warning-msg">Ingresa el código.</div>';return;}
+  showLoading(true);
+  const res=await api('getSesion',{codigo});
+  showLoading(false);
+  if(!res.ok){document.getElementById('joinMsg').innerHTML='<div class="alert-danger-msg">Sala no encontrada o inactiva.</div>';return;}
+  abrirSala(res.sesion.id,res.sesion.codigo,res.sesion.nombre,res.sesion.agora_channel);
+}
+
+async function abrirSala(id,codigo,nombre,channel){
+  salaActiva={id,codigo,nombre,channel};
+  document.getElementById('reunionJoinScreen').style.display='none';
+  const sala=document.getElementById('reunionSalaScreen');
+  sala.style.display='block';
+  sala.innerHTML=`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 22px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div><div style="font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--text)"><i class="fas fa-video" style="color:var(--accent)"></i> ${nombre}</div>
+        <div style="font-size:13px;color:var(--muted)">Código: <strong style="color:var(--accent);letter-spacing:2px">${codigo}</strong> &nbsp;•&nbsp; <span id="totalPart">0</span> participantes</div></div>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <div class="live-badge"><div class="live-dot"></div> EN VIVO</div>
+        ${SESSION.rol==='admin'?`<button onclick="cerrarSala()" class="btn-danger-custom"><i class="fas fa-stop"></i> Cerrar</button>`:''}
+        <button onclick="salirSala()" class="btn-outline-custom"><i class="fas fa-door-closed"></i> Salir</button>
+      </div>
+    </div>
+    <div class="sala-layout">
+      <div>
+        <div class="video-grid" id="videoGrid"><div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--muted);flex-direction:column;gap:12px"><div class="loading-spinner"></div><span style="font-size:14px">Conectando...</span></div></div>
+        <div class="controles">
+          <button class="ctrl-btn active" id="btnMic" onclick="toggleMic()"><i class="fas fa-microphone" id="iconMic"></i></button>
+          <button class="ctrl-btn active" id="btnCam" onclick="toggleCam()"><i class="fas fa-video" id="iconCam"></i></button>
+          <button class="ctrl-btn danger" onclick="salirSala()"><i class="fas fa-phone-slash"></i></button>
+          <span style="color:var(--muted);font-size:13px;margin-left:8px"><i class="fas fa-clock"></i> <span id="duracion">00:00</span></span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px">
+          <h4 style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px"><i class="fas fa-clock" style="color:var(--accent)"></i> Check-in</h4>
+          <div class="timer-circle" id="timerCircle">60:00</div>
+          <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">Auto cada 60 min</p>
+          <button onclick="hacerCheckin(false)" class="btn-primary-custom w-100" style="justify-content:center;font-size:13px"><i class="fas fa-camera"></i> Check-in Manual</button>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center">Último: <strong id="ultimoCheckin" style="color:var(--success)">—</strong></div>
+          <canvas id="snapCanvas" style="display:none"></canvas>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;flex:1">
+          <h4 style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px"><i class="fas fa-users" style="color:var(--accent)"></i> Participantes</h4>
+          <div id="listaParticipantes"><p style="color:var(--muted);font-size:13px">Conectando...</p></div>
+        </div>
+      </div>
+    </div>`;
+  await initAgora(id,channel);
+}
+
+async function initAgora(sesionId,channel){
+  try{
+    agoraClient=AgoraRTC.createClient({mode:'rtc',codec:'vp8'});
+    agoraClient.on('user-published',handleUserPublished);
+    agoraClient.on('user-unpublished',handleUserUnpublished);
+    agoraClient.on('user-left',u=>{const el=document.getElementById('player-'+u.uid);if(el)el.remove();});
+    await agoraClient.join(AGORA_APP_ID,channel,null,null);
+    try{[localTracks.audio,localTracks.video]=await AgoraRTC.createMicrophoneAndCameraTracks();}
+    catch(e1){try{localTracks.audio=await AgoraRTC.createMicrophoneAudioTrack();localTracks.video=null;camOn=false;}
+    catch(e2){try{localTracks.video=await AgoraRTC.createCameraVideoTrack();localTracks.audio=null;micOn=false;}
+    catch(e3){localTracks.audio=null;localTracks.video=null;camOn=false;micOn=false;}}}
+    mostrarVideoLocal();
+    const toPublish=[localTracks.audio,localTracks.video].filter(t=>t);
+    if(toPublish.length)await agoraClient.publish(toPublish);
+    await api('unirseReunion',{sesion_id:sesionId,usuario_id:SESSION.uid});
+    actualizarParticipantes(); setInterval(actualizarParticipantes,6000);
+    iniciarContadorCheckin(); iniciarDuracion();
+  }catch(e){const g=document.getElementById('videoGrid');if(g)g.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--danger)"><i class="fas fa-exclamation-triangle" style="font-size:32px;display:block;margin-bottom:12px"></i>Error: ${e.message}</div>`;}
+}
+
+function mostrarVideoLocal(){
+  const grid=document.getElementById('videoGrid'); if(!grid)return;
+  grid.innerHTML='';
+  const div=document.createElement('div'); div.className='video-item'; div.id='local-player';
+  if(localTracks.video){div.innerHTML=`<div class="video-label">${SESSION.nombre} (Tú)</div>`;grid.appendChild(div);localTracks.video.play('local-player');}
+  else{div.innerHTML=`<div class="no-video-ph"><div class="nv-avatar">${SESSION.nombre.slice(0,2).toUpperCase()}</div><span style="font-size:12px">Sin cámara</span></div><div class="video-label">${SESSION.nombre} (Tú)</div>`;grid.appendChild(div);}
+}
+async function handleUserPublished(user,mediaType){
+  await agoraClient.subscribe(user,mediaType);
+  if(mediaType==='video'){let pd=document.getElementById('player-'+user.uid);
+    if(!pd){pd=document.createElement('div');pd.className='video-item';pd.id='player-'+user.uid;pd.innerHTML=`<div class="video-label">Usuario ${user.uid}</div>`;document.getElementById('videoGrid').appendChild(pd);}
+    user.videoTrack.play('player-'+user.uid);}
+  if(mediaType==='audio')user.audioTrack.play();
+}
+function handleUserUnpublished(user,mediaType){
+  if(mediaType==='video'){const el=document.getElementById('player-'+user.uid);if(el)el.innerHTML=`<div class="no-video-ph"><div class="nv-avatar">${String(user.uid).slice(-2)}</div><span style="font-size:12px">Cámara apagada</span></div><div class="video-label">Usuario ${user.uid}</div>`;}
+}
+async function toggleMic(){micOn=!micOn;if(localTracks.audio)await localTracks.audio.setEnabled(micOn);const btn=document.getElementById('btnMic');const icon=document.getElementById('iconMic');if(!btn)return;btn.className='ctrl-btn '+(micOn?'active':'inactive');icon.className=micOn?'fas fa-microphone':'fas fa-microphone-slash';}
+async function toggleCam(){camOn=!camOn;if(localTracks.video)await localTracks.video.setEnabled(camOn);const btn=document.getElementById('btnCam');const icon=document.getElementById('iconCam');if(!btn)return;btn.className='ctrl-btn '+(camOn?'active':'inactive');icon.className=camOn?'fas fa-video':'fas fa-video-slash';}
+async function hacerCheckin(auto=false){
+  let foto='';
+  if(camOn&&localTracks.video){try{const c=document.getElementById('snapCanvas');const v=document.querySelector('#local-player video');if(v){c.width=v.videoWidth||320;c.height=v.videoHeight||240;c.getContext('2d').drawImage(v,0,0);foto=c.toDataURL('image/jpeg',.7);}}catch(e){}}
+  const res=await api('checkinReunion',{sesion_id:salaActiva.id,usuario_id:SESSION.uid,foto});
+  if(res.ok){const el=document.getElementById('ultimoCheckin');if(el)el.textContent=res.hora;checkinSec=checkinTotal;}
+}
+function iniciarContadorCheckin(){setInterval(()=>{checkinSec--;if(checkinSec<0){hacerCheckin(true);checkinSec=checkinTotal;}const m=Math.floor(checkinSec/60),s=checkinSec%60;const pct=((checkinTotal-checkinSec)/checkinTotal)*100;const el=document.getElementById('timerCircle');if(el){el.textContent=`${m}:${s.toString().padStart(2,'0')}`;el.style.background=`conic-gradient(var(--accent) ${pct}%,rgba(99,132,255,.1) ${pct}%)`;};},1000);}
+let startTime=Date.now();
+function iniciarDuracion(){startTime=Date.now();setInterval(()=>{const s=Math.floor((Date.now()-startTime)/1000);const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;const el=document.getElementById('duracion');if(el)el.textContent=(h>0?h+':':'')+m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');},1000);}
+async function actualizarParticipantes(){
+  if(!salaActiva)return;
+  const res=await api('getParticipantes',{sesion_id:salaActiva.id});
+  if(!res.ok)return;
+  const tp=document.getElementById('totalPart'); if(tp)tp.textContent=res.total;
+  const lista=document.getElementById('listaParticipantes'); if(!lista)return;
+  lista.innerHTML=(res.participantes||[]).map(p=>`<div class="p-item"><div class="p-av">${(p.nombre||'')[0]}${(p.apellido||'')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text)">${p.nombre||''} ${p.apellido||''}</div><div style="font-size:11px;color:var(--muted)">${p.cargo||''}</div></div><span class="badge-custom ${p.presente?'badge-green':'badge-red'}" style="font-size:10px;padding:3px 8px">${p.presente?'● Activo':'○ Inactivo'}</span></div>`).join('');
+}
+async function salirSala(){
+  if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}
+  if(localTracks.video){localTracks.video.stop();localTracks.video.close();}
+  if(agoraClient)await agoraClient.leave();
+  if(salaActiva)await api('salirReunion',{sesion_id:salaActiva.id,usuario_id:SESSION.uid});
+  salaActiva=null;
+  document.getElementById('reunionSalaScreen').style.display='none';
+  document.getElementById('reunionJoinScreen').style.display='block';
+  document.getElementById('codigoReunion').value='';
+}
+async function cerrarSala(){
+  if(!confirm('¿Cerrar la sala para todos?'))return;
+  if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}
+  if(localTracks.video){localTracks.video.stop();localTracks.video.close();}
+  if(agoraClient)await agoraClient.leave();
+  if(salaActiva)await api('cerrarSesion',{id:salaActiva.id});
+  salaActiva=null;
+  document.getElementById('reunionSalaScreen').style.display='none';
+  document.getElementById('reunionJoinScreen').style.display='block';
+  showPage('grupos');
+}
+</script>
+</body>
+</html>
