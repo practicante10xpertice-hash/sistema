@@ -548,21 +548,37 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbzvM9T9LYdRp3HG1fAMOh7_
 
 async function api(accion, data={}) {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
     const res = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ accion, ...data })
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion, ...data }),
+      signal: controller.signal
     });
-    return await res.json();
+    clearTimeout(timeout);
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch(e) { return { ok: false, msg: 'Respuesta inválida del servidor: ' + text.slice(0,100) }; }
   } catch(err) {
-    return { ok: false, msg: 'Error de conexion: ' + err.message };
+    if (err.name === 'AbortError') return { ok: false, msg: 'Tiempo de espera agotado. Intenta de nuevo.' };
+    return { ok: false, msg: 'Error de conexión: ' + err.message };
   }
 }
 
 function limpiarHora(valor) {
-  if (!valor) return null;
-  const s = String(valor);
+  if (valor === null || valor === undefined || valor === '') return null;
+  // Si es número decimal (como Google Sheets guarda las horas: 0.375 = 09:00)
+  if (typeof valor === 'number') {
+    const totalMin = Math.round(valor * 24 * 60);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  }
+  const s = String(valor).trim();
+  // Si ya tiene formato HH:MM
   if (/^\d{1,2}:\d{2}/.test(s)) return s.slice(0, 5);
+  // Si viene como fecha ISO de Sheets: "1899-12-30T14:08:36.000Z"
   if (s.includes('T')) { const p = s.split('T')[1]; if (p) return p.slice(0, 5); }
   return null;
 }
@@ -791,15 +807,25 @@ async function cargarEstadoAsistencia() {
 }
 
 async function registrarAsistencia(tipo) {
+  if(!SESSION.uid){ showMsg('Sesión no válida, recarga la página','danger'); return; }
   const camEnabled=document.getElementById('enableCamera').checked;
   if(camEnabled&&!fotoCaptured){if(!confirm('Sin foto. ¿Continuar?'))return;}
   showLoading(true);
   let fotoPath='';
-  if(fotoCaptured){const c=document.getElementById('photoCanvas'); fotoPath=c.toDataURL('image/jpeg',.7);}
-  const res=await api('registrarAsistencia',{usuario_id:SESSION.uid,tipo,latitud:gpsLat,longitud:gpsLng,ubicacion_texto:gpsText,foto_path:fotoPath});
+  if(fotoCaptured){try{const c=document.getElementById('photoCanvas'); fotoPath=c.toDataURL('image/jpeg',.5);}catch(e){fotoPath='';}}
+  const res=await api('registrarAsistencia',{
+    usuario_id: SESSION.uid, tipo,
+    latitud: gpsLat||0, longitud: gpsLng||0,
+    ubicacion_texto: gpsText||'', foto_path: ''
+  });
   showLoading(false);
-  if(res.ok){showMsg(res.msg||'Registrado correctamente','success'); await cargarEstadoAsistencia(); cargarDashboard();}
-  else showMsg(res.msg||'Error','danger');
+  if(res && res.ok){
+    showMsg(res.msg||'Registrado correctamente','success');
+    await cargarEstadoAsistencia();
+    cargarDashboard();
+  } else {
+    showMsg((res && res.msg)||'Error al registrar. Intenta de nuevo.','danger');
+  }
 }
 
 async function toggleCameraAsist(){
