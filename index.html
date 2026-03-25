@@ -1291,12 +1291,16 @@ function renderTablaColab(lista){
         <button class="topbar-btn" style="width:30px;height:30px;font-size:12px" onclick="verDetalle(${u.id})" title="Ver"><i class="fas fa-eye"></i></button>
         <button class="topbar-btn" style="width:30px;height:30px;font-size:12px" onclick="editarColab(${u.id})" title="Editar"><i class="fas fa-pen"></i></button>
         <button class="topbar-btn" style="width:30px;height:30px;font-size:12px;color:${parseInt(u.activo)?'var(--warning)':'var(--success)'}" onclick="toggleColab(${u.id})"><i class="fas fa-${parseInt(u.activo)?'ban':'check'}"></i></button>
-        <button class="topbar-btn" style="width:30px;height:30px;font-size:12px;color:var(--danger)" onclick="confEliminar(${u.id},'${(u.nombre||'').replace(/'/g,'\\\')}')"><i class="fas fa-trash"></i></button>
+        <button class="btn-danger-custom" style="padding:6px 10px;font-size:12px" onclick="confEliminar(${u.id},\`${(u.nombre||'').replace(/`/g,"'")}\`)" title="Eliminar"><i class="fas fa-trash"></i></button>
       </div></td>
     </tr>`;
   }).join('')+'</tbody></table></div></div>';
 }
-
+// Agrega esto al inicio del bloque <script>
+function eliminarPorId(id) {
+  const u = colabData.find(c => parseInt(c.id) === parseInt(id));
+  if (u) confEliminar(u.id, u.nombre || '');
+}
 // ── Buscar por ID ─────────────────────────────────────
 function buscarPorId(){
   const id=document.getElementById('buscarIdInput').value.trim();
