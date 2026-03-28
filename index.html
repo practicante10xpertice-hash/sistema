@@ -908,14 +908,58 @@ function switchTab(tab){
 function initHorarioGrid(){
   const grid=document.getElementById('horarioDiasGrid');
   if(!grid||grid.childElementCount>0)return;
+  // Toggles de días
   DIAS_SEMANA.forEach(dia=>{
     const t=document.createElement('div');t.className='dia-toggle';t.id='dtoggle-'+dia.key;
     t.innerHTML=`<div style="font-size:10px;margin-bottom:2px">${dia.label}</div>`;
     t.onclick=()=>toggleDia(dia.key);grid.appendChild(t);
   });
+  // Fila simple (turno único)
   DIAS_SEMANA.forEach(dia=>{
     const r=document.createElement('div');r.className='dia-horario-row';r.id='drow-'+dia.key;
-    r.innerHTML=`<span style="font-size:13px;font-weight:600;color:var(--text);min-width:90px">${dia.full}</span><div class="d-flex align-items-center gap-2 flex-wrap"><label style="font-size:12px;color:var(--muted)">Entrada:</label><input type="time" id="dent-${dia.key}" class="form-control-custom" value="09:00" style="width:130px"><label style="font-size:12px;color:var(--muted)">Salida:</label><input type="time" id="dsal-${dia.key}" class="form-control-custom" value="18:00" style="width:130px"><label style="font-size:12px;color:var(--muted)">Tolerancia:</label><input type="number" id="dtol-${dia.key}" class="form-control-custom" value="10" min="0" max="60" style="width:80px"><span style="font-size:12px;color:var(--muted)">min</span></div>`;
+    r.innerHTML=`
+      <span style="font-size:13px;font-weight:600;color:var(--text);min-width:90px">${dia.full}</span>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <label style="font-size:12px;color:var(--muted)">Entrada:</label>
+        <input type="time" id="dent-${dia.key}" class="form-control-custom" value="09:00" style="width:130px">
+        <label style="font-size:12px;color:var(--muted)">Salida:</label>
+        <input type="time" id="dsal-${dia.key}" class="form-control-custom" value="18:00" style="width:130px">
+        <label style="font-size:12px;color:var(--muted)">Tolerancia:</label>
+        <input type="number" id="dtol-${dia.key}" class="form-control-custom" value="10" min="0" max="60" style="width:80px">
+        <span style="font-size:12px;color:var(--muted)">min</span>
+      </div>`;
+    grid.appendChild(r);
+  });
+  // Fila doble turno (oculta por defecto, se muestra solo con doble turno)
+  DIAS_SEMANA.forEach(dia=>{
+    const r=document.createElement('div');r.className='dia-horario-row dia-horario-doble';r.id='drow2-'+dia.key;
+    r.style.display='none';
+    r.innerHTML=`
+      <span style="font-size:13px;font-weight:600;color:var(--text);min-width:90px">${dia.full}</span>
+      <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+        <!-- TURNO MAÑANA -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(34,211,168,.06);border:1px solid rgba(34,211,168,.15);border-radius:8px;padding:8px 12px">
+          <span style="font-size:11px;font-weight:700;color:var(--success);min-width:26px">🌅</span>
+          <label style="font-size:12px;color:var(--muted)">Entrada:</label>
+          <input type="time" id="dent-m-${dia.key}" class="form-control-custom" value="08:00" style="width:120px">
+          <label style="font-size:12px;color:var(--muted)">Salida:</label>
+          <input type="time" id="dsal-m-${dia.key}" class="form-control-custom" value="14:00" style="width:120px">
+          <label style="font-size:12px;color:var(--muted)">Tol:</label>
+          <input type="number" id="dtol-m-${dia.key}" class="form-control-custom" value="10" min="0" max="60" style="width:70px">
+          <span style="font-size:11px;color:var(--muted)">min</span>
+        </div>
+        <!-- TURNO TARDE -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(99,132,255,.06);border:1px solid rgba(99,132,255,.15);border-radius:8px;padding:8px 12px">
+          <span style="font-size:11px;font-weight:700;color:var(--accent);min-width:26px">🌤️</span>
+          <label style="font-size:12px;color:var(--muted)">Entrada:</label>
+          <input type="time" id="dent-t-${dia.key}" class="form-control-custom" value="14:00" style="width:120px">
+          <label style="font-size:12px;color:var(--muted)">Salida:</label>
+          <input type="time" id="dsal-t-${dia.key}" class="form-control-custom" value="20:00" style="width:120px">
+          <label style="font-size:12px;color:var(--muted)">Tol:</label>
+          <input type="number" id="dtol-t-${dia.key}" class="form-control-custom" value="10" min="0" max="60" style="width:70px">
+          <span style="font-size:11px;color:var(--muted)">min</span>
+        </div>
+      </div>`;
     grid.appendChild(r);
   });
   selDias('lv');
@@ -923,45 +967,56 @@ function initHorarioGrid(){
 
 function toggleDia(key){
   const t=document.getElementById('dtoggle-'+key);
-  const r=document.getElementById('drow-'+key);
   const sel=t.classList.contains('sel');
   t.classList.toggle('sel',!sel);
-  r.classList.toggle('vis',!sel);
-  // Si hay turno seleccionado, aplicar horas al día que se acaba de activar
-  if(!sel && turnosSeleccionados.size > 0){
-    aplicarTurnoADia(key);
+  const esDoble=turnosSeleccionados.size===2;
+  const rowSimple=document.getElementById('drow-'+key);
+  const rowDoble=document.getElementById('drow2-'+key);
+  if(!sel){
+    // Activar
+    if(esDoble){rowSimple.classList.remove('vis');rowDoble.style.display='flex';}
+    else{rowSimple.classList.add('vis');rowDoble.style.display='none';}
+    if(turnosSeleccionados.size>0)aplicarTurnoADia(key);
+  } else {
+    // Desactivar
+    rowSimple.classList.remove('vis');rowDoble.style.display='none';
   }
 }
 
 function selDias(modo){
+  const esDoble=turnosSeleccionados.size===2;
   DIAS_SEMANA.forEach(dia=>{
     const on=modo==='todos'?true:modo==='lv'?!['sab','dom'].includes(dia.key):false;
-    document.getElementById('dtoggle-'+dia.key)?.classList.toggle('sel',on);
-    document.getElementById('drow-'+dia.key)?.classList.toggle('vis',on);
+    const toggle=document.getElementById('dtoggle-'+dia.key);
+    const rowSimple=document.getElementById('drow-'+dia.key);
+    const rowDoble=document.getElementById('drow2-'+dia.key);
+    if(!toggle)return;
+    toggle.classList.toggle('sel',on);
+    if(on){
+      if(esDoble){rowSimple?.classList.remove('vis');if(rowDoble)rowDoble.style.display='flex';}
+      else{rowSimple?.classList.add('vis');if(rowDoble)rowDoble.style.display='none';}
+    } else {
+      rowSimple?.classList.remove('vis');if(rowDoble)rowDoble.style.display='none';
+    }
   });
-  // Re-aplicar turno si hay uno seleccionado
-  if(turnosSeleccionados.size > 0){
+  if(turnosSeleccionados.size>0){
     DIAS_SEMANA.forEach(dia=>{
-      if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel')){
-        aplicarTurnoADia(dia.key);
-      }
+      if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel'))aplicarTurnoADia(dia.key);
     });
   }
 }
 
 function aplicarTurnoADia(key){
-  const e   = document.getElementById('dent-'+key);
-  const s   = document.getElementById('dsal-'+key);
-  const tol = document.getElementById('dtol-'+key);
-  if(turnosSeleccionados.size === 2){
-    if(e)   e.value   = TURNOS.manana.entrada;
-    if(s)   s.value   = TURNOS.tarde.salida;
-    if(tol) tol.value = 10;
-  } else if(turnosSeleccionados.size === 1){
-    const t = TURNOS[[...turnosSeleccionados][0]];
-    if(e)   e.value   = t.entrada;
-    if(s)   s.value   = t.salida;
-    if(tol) tol.value = t.tolerancia;
+  if(turnosSeleccionados.size===2){
+    // Doble turno: rellenar campos de cada sub-fila
+    const em=document.getElementById('dent-m-'+key);const sm=document.getElementById('dsal-m-'+key);const tm=document.getElementById('dtol-m-'+key);
+    if(em)em.value=TURNOS.manana.entrada;if(sm)sm.value=TURNOS.manana.salida;if(tm)tm.value=10;
+    const et=document.getElementById('dent-t-'+key);const st=document.getElementById('dsal-t-'+key);const tt=document.getElementById('dtol-t-'+key);
+    if(et)et.value=TURNOS.tarde.entrada;if(st)st.value=TURNOS.tarde.salida;if(tt)tt.value=10;
+  } else if(turnosSeleccionados.size===1){
+    const t=TURNOS[[...turnosSeleccionados][0]];
+    const e=document.getElementById('dent-'+key);const s=document.getElementById('dsal-'+key);const tol=document.getElementById('dtol-'+key);
+    if(e)e.value=t.entrada;if(s)s.value=t.salida;if(tol)tol.value=t.tolerancia;
   }
 }
 
@@ -975,21 +1030,34 @@ function seleccionarTurno(tipo){
     document.getElementById('turno-'+tipo).classList.add('turno-activo');
   }
 
-  const badge    = document.getElementById('turnoBadge');
-  const badgeTxt = document.getElementById('turnoBadgeTxt');
+  const badge=document.getElementById('turnoBadge');
+  const badgeTxt=document.getElementById('turnoBadgeTxt');
 
-  if(turnosSeleccionados.size === 0){
-    badge.style.display = 'none';
+  if(turnosSeleccionados.size===0){
+    badge.style.display='none';
+    // Volver a filas simples
+    DIAS_SEMANA.forEach(dia=>{
+      if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel')){
+        document.getElementById('drow-'+dia.key)?.classList.add('vis');
+        const rd=document.getElementById('drow2-'+dia.key);if(rd)rd.style.display='none';
+      }
+    });
     return;
   }
 
-  const labels = [...turnosSeleccionados].map(t=>`${TURNOS[t].emoji} ${TURNOS[t].label}`).join('  +  ');
-  badgeTxt.innerHTML = `<i class="fas fa-check-circle"></i> ${labels}`;
-  badge.style.display = 'block';
+  const labels=[...turnosSeleccionados].map(t=>`${TURNOS[t].emoji} ${TURNOS[t].label}`).join('  +  ');
+  badgeTxt.innerHTML=`<i class="fas fa-check-circle"></i> ${labels}`;
+  badge.style.display='block';
 
-  // Aplicar a todos los días activos
+  const esDoble=turnosSeleccionados.size===2;
+
+  // Cambiar vista de filas activas y aplicar horas
   DIAS_SEMANA.forEach(dia=>{
     if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel')){
+      const rowSimple=document.getElementById('drow-'+dia.key);
+      const rowDoble=document.getElementById('drow2-'+dia.key);
+      if(esDoble){rowSimple?.classList.remove('vis');if(rowDoble)rowDoble.style.display='flex';}
+      else{rowSimple?.classList.add('vis');if(rowDoble)rowDoble.style.display='none';}
       aplicarTurnoADia(dia.key);
     }
   });
@@ -1000,25 +1068,27 @@ function getDiasHorario(){
   const d={};
   DIAS_SEMANA.forEach(dia=>{
     if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel')){
-      const entVal = document.getElementById('dent-'+dia.key)?.value || '09:00';
-      const salVal = document.getElementById('dsal-'+dia.key)?.value || '18:00';
-      const tolVal = parseInt(document.getElementById('dtol-'+dia.key)?.value || 10);
-      if(turnosSeleccionados.size === 2){
-        d[dia.key] = {
-          entrada:     TURNOS.manana.entrada,
-          salida:      TURNOS.tarde.salida,
-          tolerancia:  tolVal,
-          turno_manana:{ entrada:TURNOS.manana.entrada, salida:TURNOS.manana.salida },
-          turno_tarde: { entrada:TURNOS.tarde.entrada,  salida:TURNOS.tarde.salida  },
+      if(turnosSeleccionados.size===2){
+        // Leer campos de cada sub-fila
+        const entM=document.getElementById('dent-m-'+dia.key)?.value||TURNOS.manana.entrada;
+        const salM=document.getElementById('dsal-m-'+dia.key)?.value||TURNOS.manana.salida;
+        const tolM=parseInt(document.getElementById('dtol-m-'+dia.key)?.value||10);
+        const entT=document.getElementById('dent-t-'+dia.key)?.value||TURNOS.tarde.entrada;
+        const salT=document.getElementById('dsal-t-'+dia.key)?.value||TURNOS.tarde.salida;
+        const tolT=parseInt(document.getElementById('dtol-t-'+dia.key)?.value||10);
+        d[dia.key]={
+          entrada:     entM,
+          salida:      salT,
+          tolerancia:  tolM,
+          turno_manana:{entrada:entM,salida:salM,tolerancia:tolM},
+          turno_tarde: {entrada:entT,salida:salT,tolerancia:tolT},
           doble_turno: true
         };
       } else {
-        d[dia.key] = {
-          entrada:    entVal,
-          salida:     salVal,
-          tolerancia: tolVal,
-          doble_turno:false
-        };
+        const entVal=document.getElementById('dent-'+dia.key)?.value||'09:00';
+        const salVal=document.getElementById('dsal-'+dia.key)?.value||'18:00';
+        const tolVal=parseInt(document.getElementById('dtol-'+dia.key)?.value||10);
+        d[dia.key]={entrada:entVal,salida:salVal,tolerancia:tolVal,doble_turno:false};
       }
     }
   });
@@ -1028,11 +1098,28 @@ function getDiasHorario(){
 function setDiasHorario(obj){
   if(!obj)return;selDias('ninguno');
   Object.keys(obj).forEach(key=>{
-    document.getElementById('dtoggle-'+key)?.classList.add('sel');document.getElementById('drow-'+key)?.classList.add('vis');
     const d=obj[key];
-    if(document.getElementById('dent-'+key))document.getElementById('dent-'+key).value=d.entrada||'09:00';
-    if(document.getElementById('dsal-'+key))document.getElementById('dsal-'+key).value=d.salida||'18:00';
-    if(document.getElementById('dtol-'+key))document.getElementById('dtol-'+key).value=d.tolerancia||10;
+    document.getElementById('dtoggle-'+key)?.classList.add('sel');
+    if(d.doble_turno){
+      // Mostrar fila doble
+      document.getElementById('drow-'+key)?.classList.remove('vis');
+      const rd=document.getElementById('drow2-'+key);if(rd)rd.style.display='flex';
+      // Rellenar campos mañana
+      if(document.getElementById('dent-m-'+key))document.getElementById('dent-m-'+key).value=d.turno_manana?.entrada||TURNOS.manana.entrada;
+      if(document.getElementById('dsal-m-'+key))document.getElementById('dsal-m-'+key).value=d.turno_manana?.salida||TURNOS.manana.salida;
+      if(document.getElementById('dtol-m-'+key))document.getElementById('dtol-m-'+key).value=d.turno_manana?.tolerancia||10;
+      // Rellenar campos tarde
+      if(document.getElementById('dent-t-'+key))document.getElementById('dent-t-'+key).value=d.turno_tarde?.entrada||TURNOS.tarde.entrada;
+      if(document.getElementById('dsal-t-'+key))document.getElementById('dsal-t-'+key).value=d.turno_tarde?.salida||TURNOS.tarde.salida;
+      if(document.getElementById('dtol-t-'+key))document.getElementById('dtol-t-'+key).value=d.turno_tarde?.tolerancia||10;
+    } else {
+      // Mostrar fila simple
+      document.getElementById('drow-'+key)?.classList.add('vis');
+      const rd=document.getElementById('drow2-'+key);if(rd)rd.style.display='none';
+      if(document.getElementById('dent-'+key))document.getElementById('dent-'+key).value=d.entrada||'09:00';
+      if(document.getElementById('dsal-'+key))document.getElementById('dsal-'+key).value=d.salida||'18:00';
+      if(document.getElementById('dtol-'+key))document.getElementById('dtol-'+key).value=d.tolerancia||10;
+    }
   });
 }
 
