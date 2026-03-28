@@ -202,10 +202,8 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
 .p-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;margin-bottom:6px}
 .p-item:hover{background:rgba(255,255,255,.03)}
 .p-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
-/* ══ TURNOS ═════════════════════════════════════════════════ */
 .turno-card:hover{border-color:var(--accent)!important;background:rgba(99,132,255,.08)!important;transform:translateY(-2px)}
 .turno-card.turno-activo{border-color:var(--accent)!important;background:rgba(99,132,255,.15)!important;box-shadow:0 4px 20px rgba(99,132,255,.25)}
-/* ══ RESPONSIVE ══════════════════════════════════════════════ */
 @media(max-width:900px){.sala-layout{grid-template-columns:1fr}.colab-form-grid{grid-template-columns:1fr}}
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%)}
@@ -438,7 +436,6 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
             <button class="personal-tab" onclick="switchTab('lista')" id="ptab-lista"><i class="fas fa-users"></i> Todo el Personal</button>
           </div>
 
-          <!-- TAB NUEVO -->
           <div class="personal-tab-content active" id="ptcontent-nuevo">
             <div class="card-panel">
               <div class="card-panel-title">
@@ -475,14 +472,11 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
                 </div>
               </div>
 
-              <!-- ══ HORARIO POR DÍA ══ -->
               <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:20px">
                 <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
                   <i class="fas fa-calendar-week" style="color:var(--accent)"></i> Horario Laboral por Día
                 </div>
                 <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Selecciona el turno y los días laborales.</p>
-
-                <!-- TURNOS -->
                 <div style="margin-bottom:20px">
                   <div style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:10px">
                     <i class="fas fa-clock" style="color:var(--warning)"></i> Turno de trabajo
@@ -505,8 +499,6 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
                     <span id="turnoBadgeTxt" class="badge-custom badge-blue"></span>
                   </div>
                 </div>
-
-                <!-- DÍAS -->
                 <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
                   <span style="font-size:13px;color:var(--muted)">Días laborales:</span>
                   <button type="button" class="filter-badge f-active" onclick="selDias('lv')">LUN–VIE</button>
@@ -515,9 +507,7 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
                 </div>
                 <div class="horario-dias-grid" id="horarioDiasGrid"></div>
               </div>
-              <!-- FIN HORARIO -->
 
-              <!-- BOTONES -->
               <div class="d-flex gap-3 mt-4 flex-wrap">
                 <button class="btn-primary-custom" onclick="guardarColaborador()" id="btnGuardarColab">
                   <i class="fas fa-save"></i> <span id="btnGuardarColabTxt">Guardar Colaborador</span>
@@ -525,12 +515,9 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
                 <button class="btn-outline-custom" onclick="limpiarFormColab()"><i class="fas fa-broom"></i> Limpiar</button>
                 <button class="btn-outline-custom" onclick="cancelarEditColab()" id="btnCancelarColab" style="display:none"><i class="fas fa-times"></i> Cancelar Edición</button>
               </div>
-
             </div>
           </div>
-          <!-- FIN TAB NUEVO -->
 
-          <!-- TAB BUSCAR -->
           <div class="personal-tab-content" id="ptcontent-buscar">
             <div class="card-panel">
               <div class="card-panel-title"><i class="fas fa-magnifying-glass"></i> Buscar Colaborador por ID o Usuario</div>
@@ -542,7 +529,6 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
             </div>
           </div>
 
-          <!-- TAB LISTA -->
           <div class="personal-tab-content" id="ptcontent-lista">
             <div class="card-panel mb-3">
               <div class="personal-filters">
@@ -568,9 +554,7 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
             </div>
             <div id="personalContent"><div class="text-center py-5"><div class="loading-spinner mx-auto"></div></div></div>
           </div>
-
         </div>
-        <!-- FIN GESTIÓN PERSONAL -->
 
         <!-- GRUPOS -->
         <div class="page-section" id="page-grupos">
@@ -677,11 +661,11 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
           </div>
         </div>
 
-      </div><!-- /page-content -->
+      </div>
     </main>
   </div>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-</div><!-- /appScreen -->
+</div>
 
 <!-- MODAL DETALLE COLABORADOR -->
 <div class="modal-overlay" id="modalColab" style="display:none" onclick="if(event.target===this)cerrarModalColab()">
@@ -694,17 +678,28 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
     </div>
   </div>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
 'use strict';
+
+// ══ ESTADO GLOBAL ════════════════════════════════════════════
 let SESSION={uid:null,nombre:'',rol:'',hEntrada:'09:00',hSalida:'18:00',tolerancia:10};
 const AGORA_APP_ID='9bb873d39ae348d6a52390e17d051939';
 const GAS_URL='https://script.google.com/macros/s/AKfycbx1G0skippvc0oPxeXsg490KqI05elLIa9ow52w731yBZVGIQgi4j9WZZrFJQ4XvqBMQw/exec';
 const DIAS_SEMANA=[{key:'lun',label:'LUN',full:'Lunes'},{key:'mar',label:'MAR',full:'Martes'},{key:'mie',label:'MIÉ',full:'Miércoles'},{key:'jue',label:'JUE',full:'Jueves'},{key:'vie',label:'VIE',full:'Viernes'},{key:'sab',label:'SÁB',full:'Sábado'},{key:'dom',label:'DOM',full:'Domingo'}];
 
+// ══ TURNOS (declarado UNA sola vez) ══════════════════════════
+const TURNOS = {
+  manana: { entrada:'08:00', salida:'14:00', tolerancia:10, emoji:'🌅', label:'Turno Mañana (08:00 – 14:00)' },
+  tarde:  { entrada:'14:00', salida:'20:00', tolerancia:10, emoji:'🌤️', label:'Turno Tarde (14:00 – 20:00)' }
+};
+let turnosSeleccionados = new Set();
+
+// ══ API ═══════════════════════════════════════════════════════
 async function api(accion,data={}){
   try{
     const controller=new AbortController();
@@ -926,7 +921,17 @@ function initHorarioGrid(){
   selDias('lv');
 }
 
-function toggleDia(key){const t=document.getElementById('dtoggle-'+key);const r=document.getElementById('drow-'+key);const sel=t.classList.contains('sel');t.classList.toggle('sel',!sel);r.classList.toggle('vis',!sel);}
+function toggleDia(key){
+  const t=document.getElementById('dtoggle-'+key);
+  const r=document.getElementById('drow-'+key);
+  const sel=t.classList.contains('sel');
+  t.classList.toggle('sel',!sel);
+  r.classList.toggle('vis',!sel);
+  // Si hay turno seleccionado, aplicar horas al día que se acaba de activar
+  if(!sel && turnosSeleccionados.size > 0){
+    aplicarTurnoADia(key);
+  }
+}
 
 function selDias(modo){
   DIAS_SEMANA.forEach(dia=>{
@@ -934,13 +939,87 @@ function selDias(modo){
     document.getElementById('dtoggle-'+dia.key)?.classList.toggle('sel',on);
     document.getElementById('drow-'+dia.key)?.classList.toggle('vis',on);
   });
+  // Re-aplicar turno si hay uno seleccionado
+  if(turnosSeleccionados.size > 0){
+    DIAS_SEMANA.forEach(dia=>{
+      if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel')){
+        aplicarTurnoADia(dia.key);
+      }
+    });
+  }
 }
 
+function aplicarTurnoADia(key){
+  const e   = document.getElementById('dent-'+key);
+  const s   = document.getElementById('dsal-'+key);
+  const tol = document.getElementById('dtol-'+key);
+  if(turnosSeleccionados.size === 2){
+    if(e)   e.value   = TURNOS.manana.entrada;
+    if(s)   s.value   = TURNOS.tarde.salida;
+    if(tol) tol.value = 10;
+  } else if(turnosSeleccionados.size === 1){
+    const t = TURNOS[[...turnosSeleccionados][0]];
+    if(e)   e.value   = t.entrada;
+    if(s)   s.value   = t.salida;
+    if(tol) tol.value = t.tolerancia;
+  }
+}
+
+// ══ SELECCIONAR TURNO (única declaración) ════════════════════
+function seleccionarTurno(tipo){
+  if(turnosSeleccionados.has(tipo)){
+    turnosSeleccionados.delete(tipo);
+    document.getElementById('turno-'+tipo).classList.remove('turno-activo');
+  } else {
+    turnosSeleccionados.add(tipo);
+    document.getElementById('turno-'+tipo).classList.add('turno-activo');
+  }
+
+  const badge    = document.getElementById('turnoBadge');
+  const badgeTxt = document.getElementById('turnoBadgeTxt');
+
+  if(turnosSeleccionados.size === 0){
+    badge.style.display = 'none';
+    return;
+  }
+
+  const labels = [...turnosSeleccionados].map(t=>`${TURNOS[t].emoji} ${TURNOS[t].label}`).join('  +  ');
+  badgeTxt.innerHTML = `<i class="fas fa-check-circle"></i> ${labels}`;
+  badge.style.display = 'block';
+
+  // Aplicar a todos los días activos
+  DIAS_SEMANA.forEach(dia=>{
+    if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel')){
+      aplicarTurnoADia(dia.key);
+    }
+  });
+}
+
+// ══ OBTENER HORARIO POR DÍA ══════════════════════════════════
 function getDiasHorario(){
   const d={};
   DIAS_SEMANA.forEach(dia=>{
     if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel')){
-      d[dia.key]={entrada:document.getElementById('dent-'+dia.key)?.value||'09:00',salida:document.getElementById('dsal-'+dia.key)?.value||'18:00',tolerancia:parseInt(document.getElementById('dtol-'+dia.key)?.value||10)};
+      const entVal = document.getElementById('dent-'+dia.key)?.value || '09:00';
+      const salVal = document.getElementById('dsal-'+dia.key)?.value || '18:00';
+      const tolVal = parseInt(document.getElementById('dtol-'+dia.key)?.value || 10);
+      if(turnosSeleccionados.size === 2){
+        d[dia.key] = {
+          entrada:     TURNOS.manana.entrada,
+          salida:      TURNOS.tarde.salida,
+          tolerancia:  tolVal,
+          turno_manana:{ entrada:TURNOS.manana.entrada, salida:TURNOS.manana.salida },
+          turno_tarde: { entrada:TURNOS.tarde.entrada,  salida:TURNOS.tarde.salida  },
+          doble_turno: true
+        };
+      } else {
+        d[dia.key] = {
+          entrada:    entVal,
+          salida:     salVal,
+          tolerancia: tolVal,
+          doble_turno:false
+        };
+      }
     }
   });
   return d;
@@ -1031,7 +1110,7 @@ function verDetalle(id){
   colabModal=u;const ini=getIniciales(u.nombre,u.apellido);const dias=getDiasObj(u)||{};
   const fotoHtml=u.foto_perfil?`<img src="${u.foto_perfil}" alt="${u.nombre}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display='none'">`:'';
   document.getElementById('modalColabTitulo').textContent=`${u.nombre||''} ${u.apellido||''}`;
-  document.getElementById('modalColabContent').innerHTML=`<div class="d-flex align-items-center gap-4 mb-4 flex-wrap"><div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;border:3px solid rgba(99,132,255,.3);overflow:hidden;flex-shrink:0">${fotoHtml||ini}</div><div><div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text)">${u.nombre||''} ${u.apellido||''}</div><div style="font-size:14px;color:var(--accent);font-weight:600">${u.cargo||''}</div><div style="font-size:13px;color:var(--muted)"><i class="fas fa-building"></i> ${u.departamento||''}</div><span class="badge-custom ${parseInt(u.activo)?'badge-green':'badge-red'}" style="margin-top:6px;display:inline-flex">${parseInt(u.activo)?'✅ Activo':'🔴 Inactivo'}</span></div></div><table style="width:100%;font-size:14px">${[['Usuario',u.usuario],['Correo',u.correo],['Teléfono',u.telefono||'—'],['Rol',u.rol]].map(([l,v])=>`<tr><td style="color:var(--muted);padding:8px 0;border-bottom:1px solid var(--border);width:40%">${l}</td><td style="color:var(--text);font-weight:500;padding:8px 0;border-bottom:1px solid var(--border)">${v||'—'}</td></tr>`).join('')}</table><div style="margin-top:20px"><div style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px"><i class="fas fa-calendar-week" style="color:var(--accent)"></i> Horario por Día</div>${Object.keys(dias).length>0?Object.entries(dias).map(([k,d])=>{const dia=DIAS_SEMANA.find(dd=>dd.key===k);return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(99,132,255,.06);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;gap:8px"><span style="font-weight:600;color:var(--text);min-width:90px">${dia?.full||k}</span><span style="color:var(--success)"><i class="fas fa-sign-in-alt"></i> ${d.entrada}</span><span style="color:var(--accent)"><i class="fas fa-sign-out-alt"></i> ${d.salida}</span><span style="color:var(--muted);font-size:12px">±${d.tolerancia||10} min</span></div>`;}).join(''):`<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:12px;color:var(--muted);font-size:13px">Horario general: ${String(u.hora_entrada||'09:00').slice(0,5)} – ${String(u.hora_salida||'18:00').slice(0,5)}</div>`}</div>`;
+  document.getElementById('modalColabContent').innerHTML=`<div class="d-flex align-items-center gap-4 mb-4 flex-wrap"><div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;border:3px solid rgba(99,132,255,.3);overflow:hidden;flex-shrink:0">${fotoHtml||ini}</div><div><div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text)">${u.nombre||''} ${u.apellido||''}</div><div style="font-size:14px;color:var(--accent);font-weight:600">${u.cargo||''}</div><div style="font-size:13px;color:var(--muted)"><i class="fas fa-building"></i> ${u.departamento||''}</div><span class="badge-custom ${parseInt(u.activo)?'badge-green':'badge-red'}" style="margin-top:6px;display:inline-flex">${parseInt(u.activo)?'✅ Activo':'🔴 Inactivo'}</span></div></div><table style="width:100%;font-size:14px">${[['Usuario',u.usuario],['Correo',u.correo],['Teléfono',u.telefono||'—'],['Rol',u.rol]].map(([l,v])=>`<tr><td style="color:var(--muted);padding:8px 0;border-bottom:1px solid var(--border);width:40%">${l}</td><td style="color:var(--text);font-weight:500;padding:8px 0;border-bottom:1px solid var(--border)">${v||'—'}</td></tr>`).join('')}</table><div style="margin-top:20px"><div style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px"><i class="fas fa-calendar-week" style="color:var(--accent)"></i> Horario por Día</div>${Object.keys(dias).length>0?Object.entries(dias).map(([k,d])=>{const dia=DIAS_SEMANA.find(dd=>dd.key===k);return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(99,132,255,.06);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;gap:8px"><span style="font-weight:600;color:var(--text);min-width:90px">${dia?.full||k}</span><span style="color:var(--success)"><i class="fas fa-sign-in-alt"></i> ${d.entrada}</span><span style="color:var(--accent)"><i class="fas fa-sign-out-alt"></i> ${d.salida}</span><span style="color:var(--muted);font-size:12px">±${d.tolerancia||10} min</span>${d.doble_turno?'<span class="badge-custom badge-purple" style="font-size:10px">Doble turno</span>':''}</div>`;}).join(''):`<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:12px;color:var(--muted);font-size:13px">Horario general: ${String(u.hora_entrada||'09:00').slice(0,5)} – ${String(u.hora_salida||'18:00').slice(0,5)}</div>`}</div>`;
   document.getElementById('modalColab').style.display='flex';
 }
 
@@ -1059,16 +1138,35 @@ function editarColab(id){
   document.getElementById('colabEditId').value=u.id;document.getElementById('cNombre').value=u.nombre||'';document.getElementById('cApellido').value=u.apellido||'';document.getElementById('cCorreo').value=u.correo||'';document.getElementById('cUsuario').value=u.usuario||'';document.getElementById('cPassword').value='';document.getElementById('cRol').value=u.rol||'colaborador';document.getElementById('cDepto').value=u.departamento||'';document.getElementById('cCargo').value=u.cargo||'';document.getElementById('cTelefono').value=u.telefono||'';document.getElementById('cFoto').value=u.foto_perfil||'';
   document.getElementById('passHint').textContent='(dejar vacío para no cambiar)';document.getElementById('formColabTitleText').textContent='✏️ Editar Colaborador';document.getElementById('btnGuardarColabTxt').textContent='Guardar Cambios';document.getElementById('btnCancelarColab').style.display='inline-flex';
   const dias=getDiasObj(u)||{lun:{entrada:String(u.hora_entrada||'09:00').slice(0,5),salida:String(u.hora_salida||'18:00').slice(0,5),tolerancia:u.tolerancia_min||10},mar:{entrada:String(u.hora_entrada||'09:00').slice(0,5),salida:String(u.hora_salida||'18:00').slice(0,5),tolerancia:u.tolerancia_min||10},mie:{entrada:String(u.hora_entrada||'09:00').slice(0,5),salida:String(u.hora_salida||'18:00').slice(0,5),tolerancia:u.tolerancia_min||10},jue:{entrada:String(u.hora_entrada||'09:00').slice(0,5),salida:String(u.hora_salida||'18:00').slice(0,5),tolerancia:u.tolerancia_min||10},vie:{entrada:String(u.hora_entrada||'09:00').slice(0,5),salida:String(u.hora_salida||'18:00').slice(0,5),tolerancia:u.tolerancia_min||10}};
+  // Detectar si tiene doble turno guardado
+  const primerDia=Object.values(dias)[0];
+  if(primerDia&&primerDia.doble_turno){
+    turnosSeleccionados=new Set(['manana','tarde']);
+    document.getElementById('turno-manana').classList.add('turno-activo');
+    document.getElementById('turno-tarde').classList.add('turno-activo');
+    const badge=document.getElementById('turnoBadge');const badgeTxt=document.getElementById('turnoBadgeTxt');
+    if(badge)badge.style.display='block';
+    if(badgeTxt)badgeTxt.innerHTML=`<i class="fas fa-check-circle"></i> 🌅 Turno Mañana (08:00 – 14:00)  +  🌤️ Turno Tarde (14:00 – 20:00)`;
+  } else {
+    turnosSeleccionados=new Set();
+    document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('turno-activo'));
+    const badge=document.getElementById('turnoBadge');if(badge)badge.style.display='none';
+  }
   setDiasHorario(dias);window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function limpiarFormColab(){
   document.getElementById('colabEditId').value='';
   ['cNombre','cApellido','cCorreo','cUsuario','cPassword','cDepto','cCargo','cTelefono','cFoto'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('cRol').value='colaborador';document.getElementById('passHint').textContent='(requerida)';document.getElementById('formColabTitleText').textContent='Registrar Nuevo Colaborador';document.getElementById('btnGuardarColabTxt').textContent='Guardar Colaborador';document.getElementById('btnCancelarColab').style.display='none';
+  document.getElementById('cRol').value='colaborador';
+  document.getElementById('passHint').textContent='(requerida)';
+  document.getElementById('formColabTitleText').textContent='Registrar Nuevo Colaborador';
+  document.getElementById('btnGuardarColabTxt').textContent='Guardar Colaborador';
+  document.getElementById('btnCancelarColab').style.display='none';
+  turnosSeleccionados=new Set();
+  document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('turno-activo'));
+  const badge=document.getElementById('turnoBadge');if(badge)badge.style.display='none';
   selDias('lv');
-  // Reset turnos
- turnosSeleccionados = new Set();document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('turno-activo'));const badge=document.getElementById('turnoBadge');if(badge)badge.style.display='none';
 }
 
 function cancelarEditColab(){limpiarFormColab();switchTab('lista');}
@@ -1135,255 +1233,89 @@ async function cargarLogs(){
   document.getElementById('logsStats').innerHTML=`<div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-check-circle"></i></div><div class="stat-value">${exit}</div><div class="stat-label">Exitosos</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-red"><i class="fas fa-times-circle"></i></div><div class="stat-value">${fall}</div><div class="stat-label">Fallidos</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-ban"></i></div><div class="stat-value">${bloq}</div><div class="stat-label">Bloqueados</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-database"></i></div><div class="stat-value">${res.total||0}</div><div class="stat-label">Total Registros</div></div></div>`;
   document.getElementById('logsTable').innerHTML=logs.length?`<table class="table-custom"><thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>IP</th><th>Resultado</th><th>Mensaje</th></tr></thead><tbody>`+logs.map(l=>{const badge=l.resultado==='exitoso'?'badge-green':l.resultado==='fallido'?'badge-red':'badge-orange';return`<tr><td style="font-size:13px;white-space:nowrap">${l.creado_en||''}</td><td><strong>${l.usuario_str||''}</strong></td><td><code style="font-size:11px;color:var(--muted)">${l.ip_address||''}</code></td><td><span class="badge-custom ${badge}">${l.resultado||''}</span></td><td style="font-size:13px;color:var(--muted)">${l.mensaje||'—'}</td></tr>`;}).join('')+'</tbody></table>':'<p style="color:var(--muted);padding:12px;font-size:14px">Sin registros.</p>';
 }
-async function exportarPDF() {
-  if (!reporteData.length) { showMsg('Genera un reporte primero', 'warning'); return; }
- 
+
+async function exportarPDF(){
+  if(!reporteData.length){showMsg('Genera un reporte primero','warning');return;}
   showLoading(true);
- 
-  // Agrupar registros por usuario
-  const porUsuario = {};
-  reporteData.forEach(r => {
-    const uid = String(r.usuario_id || r.id || '');
-    const nombre = `${r.nombre || ''} ${r.apellido || ''}`.trim();
-    if (!porUsuario[uid]) {
-      porUsuario[uid] = {
-        nombre,
-        departamento: r.departamento || '',
-        cargo: r.cargo || '',
-        uid,
-        registros: []
-      };
-    }
+  const porUsuario={};
+  reporteData.forEach(r=>{
+    const uid=String(r.usuario_id||r.id||'');
+    const nombre=`${r.nombre||''} ${r.apellido||''}`.trim();
+    if(!porUsuario[uid]){porUsuario[uid]={nombre,departamento:r.departamento||'',cargo:r.cargo||'',uid,registros:[]};}
     porUsuario[uid].registros.push(r);
   });
- 
-  // Obtener período del filtro
-  const mes = document.getElementById('rMes')?.value || '';
-  const anio = document.getElementById('rAnio')?.value || '';
-  const meses = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const mesNombre = meses[parseInt(mes)] || '';
-  const diasEnMes = mes && anio ? new Date(anio, mes, 0).getDate() : 28;
-  const desde = mes && anio ? `${anio}-${String(mes).padStart(2,'0')}-01` : '';
-  const hasta = mes && anio ? `${anio}-${String(mes).padStart(2,'0')}-${diasEnMes}` : '';
-  const periodoLabel = desde && hasta
-    ? `${desde.split('-').reverse().join('/')} al ${hasta.split('-').reverse().join('/')}`
-    : 'Período seleccionado';
-  const ahora = new Date().toLocaleString('es-PE');
- 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
- 
-  const usuarios = Object.values(porUsuario);
-  const COLORES = {
-    azulOscuro:  [10, 25, 60],
-    azulMedio:   [30, 60, 120],
-    azulClaro:   [70, 110, 200],
-    grisClaro:   [240, 242, 248],
-    grisMedio:   [200, 210, 225],
-    blanco:      [255, 255, 255],
-    verde:       [34, 150, 90],
-    rojo:        [200, 50, 60],
-    naranja:     [220, 140, 30],
-    texto:       [30, 35, 50],
-    textoMuted:  [100, 110, 130],
-  };
- 
-  usuarios.forEach((usuario, idx) => {
-    if (idx > 0) doc.addPage();
- 
-    const W = doc.internal.pageSize.getWidth();
-    const H = doc.internal.pageSize.getHeight();
-    let y = 0;
- 
-    // ── ENCABEZADO ──────────────────────────────────────────
-    doc.setFillColor(...COLORES.azulOscuro);
-    doc.rect(0, 0, W, 28, 'F');
- 
-    // Franja decorativa
-    doc.setFillColor(...COLORES.azulClaro);
-    doc.rect(0, 24, W, 3, 'F');
- 
-    // Título empresa
-    doc.setTextColor(...COLORES.blanco);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text('REPORTE DE ASISTENCIA — FINACORP', W / 2, 10, { align: 'center' });
- 
-    // Período y generado
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Período: ${periodoLabel}`, W / 2, 17, { align: 'center' });
-    doc.text(`Generado: ${ahora}`, W / 2, 22, { align: 'center' });
- 
-    y = 34;
- 
-    // ── CARD COLABORADOR ─────────────────────────────────────
-    doc.setFillColor(...COLORES.grisClaro);
-    doc.roundedRect(8, y, W - 16, 26, 2, 2, 'F');
-    doc.setDrawColor(...COLORES.azulClaro);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(8, y, W - 16, 26, 2, 2, 'S');
- 
-    // Línea azul izquierda
-    doc.setFillColor(...COLORES.azulClaro);
-    doc.rect(8, y, 3, 26, 'F');
- 
-    doc.setTextColor(...COLORES.azulOscuro);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.text(usuario.nombre.toUpperCase(), 16, y + 8);
- 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...COLORES.textoMuted);
-    doc.text(`ID: ${usuario.uid}`, 16, y + 14);
-    doc.text(`Área: ${usuario.departamento.toUpperCase()}`, 16, y + 19);
-    doc.text(`Cargo: ${usuario.cargo}`, 16, y + 24);
- 
-    // ── ESTADÍSTICAS ─────────────────────────────────────────
-    y += 32;
- 
-    // Calcular estadísticas
-    const total     = usuario.registros.length;
-    const puntuales = usuario.registros.filter(r => !parseInt(r.tardanza)).length;
-    const tardanzas = usuario.registros.filter(r => parseInt(r.tardanza)).length;
- 
-    const stats = [
-      { label: 'Total',     valor: total,     color: COLORES.azulMedio },
-      { label: 'Puntuales', valor: puntuales, color: COLORES.verde },
-      { label: 'Tardanzas', valor: tardanzas, color: COLORES.rojo },
-    ];
- 
-    const cardW = (W - 20) / stats.length;
-    stats.forEach((s, i) => {
-      const cx = 10 + i * cardW;
-      doc.setFillColor(...s.color);
-      doc.roundedRect(cx, y, cardW - 4, 16, 2, 2, 'F');
-      doc.setTextColor(...COLORES.blanco);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.text(String(s.valor), cx + (cardW - 4) / 2, y + 9, { align: 'center' });
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
-      doc.text(s.label.toUpperCase(), cx + (cardW - 4) / 2, y + 14, { align: 'center' });
+  const mes=document.getElementById('rMes')?.value||'';const anio=document.getElementById('rAnio')?.value||'';
+  const meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const mesNombre=meses[parseInt(mes)]||'';
+  const diasEnMes=mes&&anio?new Date(anio,mes,0).getDate():28;
+  const desde=mes&&anio?`${anio}-${String(mes).padStart(2,'0')}-01`:'';
+  const hasta=mes&&anio?`${anio}-${String(mes).padStart(2,'0')}-${diasEnMes}`:'';
+  const periodoLabel=desde&&hasta?`${desde.split('-').reverse().join('/')} al ${hasta.split('-').reverse().join('/')}`:'Período seleccionado';
+  const ahora=new Date().toLocaleString('es-PE');
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const usuarios=Object.values(porUsuario);
+  const COLORES={azulOscuro:[10,25,60],azulMedio:[30,60,120],azulClaro:[70,110,200],grisClaro:[240,242,248],grisMedio:[200,210,225],blanco:[255,255,255],verde:[34,150,90],rojo:[200,50,60],naranja:[220,140,30],texto:[30,35,50],textoMuted:[100,110,130]};
+  usuarios.forEach((usuario,idx)=>{
+    if(idx>0)doc.addPage();
+    const W=doc.internal.pageSize.getWidth();
+    doc.setFillColor(...COLORES.azulOscuro);doc.rect(0,0,W,28,'F');
+    doc.setFillColor(...COLORES.azulClaro);doc.rect(0,24,W,3,'F');
+    doc.setTextColor(...COLORES.blanco);doc.setFont('helvetica','bold');doc.setFontSize(16);
+    doc.text('REPORTE DE ASISTENCIA — FINACORP',W/2,10,{align:'center'});
+    doc.setFontSize(8);doc.setFont('helvetica','normal');
+    doc.text(`Período: ${periodoLabel}`,W/2,17,{align:'center'});
+    doc.text(`Generado: ${ahora}`,W/2,22,{align:'center'});
+    let y=34;
+    doc.setFillColor(...COLORES.grisClaro);doc.roundedRect(8,y,W-16,26,2,2,'F');
+    doc.setDrawColor(...COLORES.azulClaro);doc.setLineWidth(0.5);doc.roundedRect(8,y,W-16,26,2,2,'S');
+    doc.setFillColor(...COLORES.azulClaro);doc.rect(8,y,3,26,'F');
+    doc.setTextColor(...COLORES.azulOscuro);doc.setFont('helvetica','bold');doc.setFontSize(13);
+    doc.text(usuario.nombre.toUpperCase(),16,y+8);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...COLORES.textoMuted);
+    doc.text(`ID: ${usuario.uid}`,16,y+14);
+    doc.text(`Área: ${usuario.departamento.toUpperCase()}`,16,y+19);
+    doc.text(`Cargo: ${usuario.cargo}`,16,y+24);
+    y+=32;
+    const total=usuario.registros.length;
+    const puntuales=usuario.registros.filter(r=>!parseInt(r.tardanza)).length;
+    const tardanzas=usuario.registros.filter(r=>parseInt(r.tardanza)).length;
+    const stats=[{label:'Total',valor:total,color:COLORES.azulMedio},{label:'Puntuales',valor:puntuales,color:COLORES.verde},{label:'Tardanzas',valor:tardanzas,color:COLORES.rojo}];
+    const cardW=(W-20)/stats.length;
+    stats.forEach((s,i)=>{
+      const cx=10+i*cardW;doc.setFillColor(...s.color);doc.roundedRect(cx,y,cardW-4,16,2,2,'F');
+      doc.setTextColor(...COLORES.blanco);doc.setFont('helvetica','bold');doc.setFontSize(16);
+      doc.text(String(s.valor),cx+(cardW-4)/2,y+9,{align:'center'});
+      doc.setFontSize(7);doc.setFont('helvetica','normal');
+      doc.text(s.label.toUpperCase(),cx+(cardW-4)/2,y+14,{align:'center'});
     });
- 
-    y += 22;
- 
-    // ── TABLA DE REGISTROS ───────────────────────────────────
-    // Agrupar por fecha
-    const porFecha = {};
-    usuario.registros.forEach(r => {
-      const f = r.fecha || '';
-      if (!porFecha[f]) porFecha[f] = [];
-      porFecha[f].push(r);
+    y+=22;
+    const porFecha={};
+    usuario.registros.forEach(r=>{const f=r.fecha||'';if(!porFecha[f])porFecha[f]=[];porFecha[f].push(r);});
+    const filas=[];let num=1;
+    Object.keys(porFecha).sort().forEach(fecha=>{
+      const regs=porFecha[fecha];
+      const entrada=regs.find(r=>r.tipo==='entrada');const salida=regs.find(r=>r.tipo==='salida');
+      const partes=fecha.split('-');const fechaFmt=partes.length===3?`${partes[2]}/${partes[1]}/${partes[0]}`:fecha;
+      const horaE=entrada?String(entrada.hora||'').slice(0,5):'—';
+      const tardE=entrada&&parseInt(entrada.tardanza)?`Tardanza +${entrada.minutos_tardanza} min`:(entrada?'Puntual':'—');
+      const horaS=salida?String(salida.hora||'').slice(0,5):'—';
+      const tardS=salida?'Puntual':'—';
+      filas.push([num++,fechaFmt,horaE,tardE,horaS,tardS]);
     });
- 
-    const filas = [];
-    let num = 1;
-    Object.keys(porFecha).sort().forEach(fecha => {
-      const regs = porFecha[fecha];
-      const entrada = regs.find(r => r.tipo === 'entrada');
-      const salida  = regs.find(r => r.tipo === 'salida');
- 
-      // Formatear fecha dd/mm/yyyy
-      const partes = fecha.split('-');
-      const fechaFmt = partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : fecha;
- 
-      const horaE    = entrada ? String(entrada.hora || '').slice(0,5) : '—';
-      const tardE    = entrada && parseInt(entrada.tardanza) ? `Tardanza +${entrada.minutos_tardanza} min` : (entrada ? 'Puntual' : '—');
-      const horaS    = salida  ? String(salida.hora || '').slice(0,5) : '—';
-      const tardS    = salida  ? 'Puntual' : '—';
- 
-      filas.push([
-        num++,
-        fechaFmt,
-        horaE,
-        tardE,
-        horaS,
-        tardS,
-      ]);
-    });
- 
-    doc.autoTable({
-      startY: y,
-      head: [[
-        '#', 'Fecha', 'Entrada', 'Puntualidad', 'Salida', 'Puntualidad'
-      ]],
-      body: filas,
-      margin: { left: 8, right: 8 },
-      tableWidth: W - 16,
-      styles: {
-        fontSize: 8,
-        cellPadding: 3,
-        textColor: COLORES.texto,
-        lineColor: COLORES.grisMedio,
-        lineWidth: 0.2,
-      },
-      headStyles: {
-        fillColor: COLORES.azulOscuro,
-        textColor: COLORES.blanco,
-        fontStyle: 'bold',
-        fontSize: 8,
-        halign: 'center',
-      },
-      alternateRowStyles: {
-        fillColor: COLORES.grisClaro,
-      },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 10 },
-        1: { halign: 'center', cellWidth: 30 },
-        2: { halign: 'center', cellWidth: 25 },
-        3: { halign: 'center' },
-        4: { halign: 'center', cellWidth: 25 },
-        5: { halign: 'center' },
-      },
-      // Colorear celdas de puntualidad
-      didParseCell: function(data) {
-        if (data.section === 'body' && (data.column.index === 3 || data.column.index === 5)) {
-          const txt = String(data.cell.raw || '');
-          if (txt.includes('Tardanza')) {
-            data.cell.styles.textColor = COLORES.rojo;
-            data.cell.styles.fontStyle = 'bold';
-          } else if (txt === 'Puntual') {
-            data.cell.styles.textColor = COLORES.verde;
-          }
-        }
-      },
-      // Pie de tabla con totales del colaborador
-      foot: [[
-        '', `Total: ${total}`,
-        `Puntuales: ${puntuales}`, '',
-        `Tardanzas: ${tardanzas}`, ''
-      ]],
-      footStyles: {
-        fillColor: COLORES.azulMedio,
-        textColor: COLORES.blanco,
-        fontStyle: 'bold',
-        fontSize: 8,
-        halign: 'center',
-      },
-    });
- 
-    // ── PIE DE PÁGINA ────────────────────────────────────────
-    const pageH = doc.internal.pageSize.getHeight();
-    doc.setFillColor(...COLORES.azulOscuro);
-    doc.rect(0, pageH - 8, W, 8, 'F');
-    doc.setTextColor(...COLORES.blanco);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text('FINACORP — Sistema de Control de Asistencia', 10, pageH - 3);
-    doc.text(`Pág. ${idx + 1} / ${usuarios.length}`, W - 10, pageH - 3, { align: 'right' });
+    doc.autoTable({startY:y,head:[['#','Fecha','Entrada','Puntualidad','Salida','Puntualidad']],body:filas,margin:{left:8,right:8},tableWidth:W-16,styles:{fontSize:8,cellPadding:3,textColor:COLORES.texto,lineColor:COLORES.grisMedio,lineWidth:0.2},headStyles:{fillColor:COLORES.azulOscuro,textColor:COLORES.blanco,fontStyle:'bold',fontSize:8,halign:'center'},alternateRowStyles:{fillColor:COLORES.grisClaro},columnStyles:{0:{halign:'center',cellWidth:10},1:{halign:'center',cellWidth:30},2:{halign:'center',cellWidth:25},3:{halign:'center'},4:{halign:'center',cellWidth:25},5:{halign:'center'}},didParseCell:function(data){if(data.section==='body'&&(data.column.index===3||data.column.index===5)){const txt=String(data.cell.raw||'');if(txt.includes('Tardanza')){data.cell.styles.textColor=COLORES.rojo;data.cell.styles.fontStyle='bold';}else if(txt==='Puntual'){data.cell.styles.textColor=COLORES.verde;}}},foot:[['',`Total: ${total}`,`Puntuales: ${puntuales}`,'',`Tardanzas: ${tardanzas}`,'']],footStyles:{fillColor:COLORES.azulMedio,textColor:COLORES.blanco,fontStyle:'bold',fontSize:8,halign:'center'}});
+    const pageH=doc.internal.pageSize.getHeight();
+    doc.setFillColor(...COLORES.azulOscuro);doc.rect(0,pageH-8,W,8,'F');
+    doc.setTextColor(...COLORES.blanco);doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.text('FINACORP — Sistema de Control de Asistencia',10,pageH-3);
+    doc.text(`Pág. ${idx+1} / ${usuarios.length}`,W-10,pageH-3,{align:'right'});
   });
- 
-  // Guardar
-  const nombreArchivo = `reporte_asistencia_${mesNombre}_${anio}.pdf`;
-  doc.save(nombreArchivo);
+  doc.save(`reporte_asistencia_${mesNombre}_${anio}.pdf`);
   showLoading(false);
-  showMsg('✅ PDF generado correctamente', 'success');
+  showMsg('✅ PDF generado correctamente','success');
 }
- 
 
+// ══ VIDEOLLAMADA (AGORA) ══════════════════════════════════════
 let agoraClient=null,localTracks={audio:null,video:null},micOn=true,camOn=true,salaActiva=null,checkinSec=3600,checkinTotal=3600;
 
 async function buscarSala(){const codigo=document.getElementById('codigoReunion').value.trim().toUpperCase();if(!codigo){document.getElementById('joinMsg').innerHTML='<div class="alert-warning-msg">Ingresa el código de la sala.</div>';return;}showLoading(true);const res=await api('getSesion',{codigo});showLoading(false);if(!res.ok){document.getElementById('joinMsg').innerHTML='<div class="alert-danger-msg">Sala no encontrada o inactiva.</div>';return;}abrirSala(res.sesion.id,res.sesion.codigo,res.sesion.nombre,res.sesion.agora_channel);}
@@ -1421,62 +1353,6 @@ function iniciarDuracion(){startTime=Date.now();setInterval(()=>{const s=Math.fl
 async function actualizarParticipantes(){if(!salaActiva)return;const res=await api('getParticipantes',{sesion_id:salaActiva.id});if(!res.ok)return;const tp=document.getElementById('totalPart');if(tp)tp.textContent=res.total;const lista=document.getElementById('listaParticipantes');if(!lista)return;lista.innerHTML=(res.participantes||[]).map(p=>`<div class="p-item"><div class="p-av">${(p.nombre||'')[0]}${(p.apellido||'')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text)">${p.nombre||''} ${p.apellido||''}</div><div style="font-size:11px;color:var(--muted)">${p.cargo||''}</div></div><span class="badge-custom ${p.presente?'badge-green':'badge-red'}" style="font-size:10px;padding:3px 8px">${p.presente?'● Activo':'○ Inactivo'}</span></div>`).join('');}
 async function salirSala(){if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}if(localTracks.video){localTracks.video.stop();localTracks.video.close();}if(agoraClient)await agoraClient.leave();if(salaActiva)await api('salirReunion',{sesion_id:salaActiva.id,usuario_id:SESSION.uid});salaActiva=null;document.getElementById('reunionSalaScreen').style.display='none';document.getElementById('reunionJoinScreen').style.display='block';document.getElementById('codigoReunion').value='';}
 async function cerrarSala(){if(!confirm('¿Cerrar la sala para todos los participantes?'))return;if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}if(localTracks.video){localTracks.video.stop();localTracks.video.close();}if(agoraClient)await agoraClient.leave();if(salaActiva)await api('cerrarSesion',{id:salaActiva.id});salaActiva=null;document.getElementById('reunionSalaScreen').style.display='none';document.getElementById('reunionJoinScreen').style.display='block';showPage('grupos');}
-
-
-// ══ TURNOS — permite seleccionar uno o ambos ══
-const TURNOS = {
-  manana: { entrada:'08:00', salida:'14:00', tolerancia:10, emoji:'🌅', label:'Turno Mañana (08:00 – 14:00)' },
-  tarde:  { entrada:'14:00', salida:'20:00', tolerancia:10, emoji:'🌤️', label:'Turno Tarde (14:00 – 20:00)' }
-};
-let turnosSeleccionados = new Set(); // ← ahora es un Set, no una variable
-
-function seleccionarTurno(tipo) {
-  // Toggle: si ya está seleccionado lo quita, si no lo agrega
-  if (turnosSeleccionados.has(tipo)) {
-    turnosSeleccionados.delete(tipo);
-    document.getElementById('turno-' + tipo).classList.remove('turno-activo');
-  } else {
-    turnosSeleccionados.add(tipo);
-    document.getElementById('turno-' + tipo).classList.add('turno-activo');
-  }
-
-  // Actualizar badge
-  const badge    = document.getElementById('turnoBadge');
-  const badgeTxt = document.getElementById('turnoBadgeTxt');
-
-  if (turnosSeleccionados.size === 0) {
-    badge.style.display = 'none';
-    return;
-  }
-
-  const labels = [...turnosSeleccionados].map(t => `${TURNOS[t].emoji} ${TURNOS[t].label}`).join('  +  ');
-  badgeTxt.innerHTML = `<i class="fas fa-check-circle"></i> ${labels}`;
-  badge.style.display = 'block';
-
-  // Aplicar horas a los días activos según turno(s) seleccionados
-  DIAS_SEMANA.forEach(dia => {
-    if (document.getElementById('dtoggle-' + dia.key)?.classList.contains('sel')) {
-      if (turnosSeleccionados.size === 2) {
-        // Doble turno: entrada del turno mañana, salida del turno tarde
-        const e   = document.getElementById('dent-' + dia.key);
-        const s   = document.getElementById('dsal-' + dia.key);
-        const tol = document.getElementById('dtol-' + dia.key);
-        if(e)   e.value   = TURNOS.manana.entrada;  // 08:00
-        if(s)   s.value   = TURNOS.tarde.salida;    // 20:00
-        if(tol) tol.value = 10;
-      } else {
-        // Un solo turno
-        const t   = TURNOS[[...turnosSeleccionados][0]];
-        const e   = document.getElementById('dent-' + dia.key);
-        const s   = document.getElementById('dsal-' + dia.key);
-        const tol = document.getElementById('dtol-' + dia.key);
-        if(e)   e.value   = t.entrada;
-        if(s)   s.value   = t.salida;
-        if(tol) tol.value = t.tolerancia;
-      }
-    }
-  });
-}
 
 window.addEventListener('beforeunload',()=>{
   if(!salaActiva)return;
