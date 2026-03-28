@@ -1422,12 +1422,6 @@ async function actualizarParticipantes(){if(!salaActiva)return;const res=await a
 async function salirSala(){if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}if(localTracks.video){localTracks.video.stop();localTracks.video.close();}if(agoraClient)await agoraClient.leave();if(salaActiva)await api('salirReunion',{sesion_id:salaActiva.id,usuario_id:SESSION.uid});salaActiva=null;document.getElementById('reunionSalaScreen').style.display='none';document.getElementById('reunionJoinScreen').style.display='block';document.getElementById('codigoReunion').value='';}
 async function cerrarSala(){if(!confirm('¿Cerrar la sala para todos los participantes?'))return;if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}if(localTracks.video){localTracks.video.stop();localTracks.video.close();}if(agoraClient)await agoraClient.leave();if(salaActiva)await api('cerrarSesion',{id:salaActiva.id});salaActiva=null;document.getElementById('reunionSalaScreen').style.display='none';document.getElementById('reunionJoinScreen').style.display='block';showPage('grupos');}
 
-// ══ TURNOS ══════════════════════════════════════════════════
-const TURNOS={
-  manana:{entrada:'08:00',salida:'14:00',tolerancia:10,emoji:'🌅',label:'Turno Mañana (08:00 – 14:00)'},
-  tarde: {entrada:'14:00',salida:'20:00',tolerancia:10,emoji:'🌤️',label:'Turno Tarde (14:00 – 20:00)'}
-};
-let turnoActual=null;
 
 // ══ TURNOS — permite seleccionar uno o ambos ══
 const TURNOS = {
