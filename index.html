@@ -1068,7 +1068,7 @@ function limpiarFormColab(){
   document.getElementById('cRol').value='colaborador';document.getElementById('passHint').textContent='(requerida)';document.getElementById('formColabTitleText').textContent='Registrar Nuevo Colaborador';document.getElementById('btnGuardarColabTxt').textContent='Guardar Colaborador';document.getElementById('btnCancelarColab').style.display='none';
   selDias('lv');
   // Reset turnos
-  turnoActual=null;document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('turno-activo'));const badge=document.getElementById('turnoBadge');if(badge)badge.style.display='none';
+ turnosSeleccionados = new Set();document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('turno-activo'));const badge=document.getElementById('turnoBadge');if(badge)badge.style.display='none';
 }
 
 function cancelarEditColab(){limpiarFormColab();switchTab('lista');}
@@ -1429,18 +1429,57 @@ const TURNOS={
 };
 let turnoActual=null;
 
-function seleccionarTurno(tipo){
-  turnoActual=tipo;
-  document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('turno-activo'));
-  document.getElementById('turno-'+tipo).classList.add('turno-activo');
-  const t=TURNOS[tipo];
-  const badge=document.getElementById('turnoBadge');
-  document.getElementById('turnoBadgeTxt').innerHTML=`<i class="fas fa-check-circle"></i> ${t.emoji} ${t.label}`;
-  badge.style.display='block';
-  DIAS_SEMANA.forEach(dia=>{
-    if(document.getElementById('dtoggle-'+dia.key)?.classList.contains('sel')){
-      const e=document.getElementById('dent-'+dia.key);const s=document.getElementById('dsal-'+dia.key);const tol=document.getElementById('dtol-'+dia.key);
-      if(e)e.value=t.entrada;if(s)s.value=t.salida;if(tol)tol.value=t.tolerancia;
+// ══ TURNOS — permite seleccionar uno o ambos ══
+const TURNOS = {
+  manana: { entrada:'08:00', salida:'14:00', tolerancia:10, emoji:'🌅', label:'Turno Mañana (08:00 – 14:00)' },
+  tarde:  { entrada:'14:00', salida:'20:00', tolerancia:10, emoji:'🌤️', label:'Turno Tarde (14:00 – 20:00)' }
+};
+let turnosSeleccionados = new Set(); // ← ahora es un Set, no una variable
+
+function seleccionarTurno(tipo) {
+  // Toggle: si ya está seleccionado lo quita, si no lo agrega
+  if (turnosSeleccionados.has(tipo)) {
+    turnosSeleccionados.delete(tipo);
+    document.getElementById('turno-' + tipo).classList.remove('turno-activo');
+  } else {
+    turnosSeleccionados.add(tipo);
+    document.getElementById('turno-' + tipo).classList.add('turno-activo');
+  }
+
+  // Actualizar badge
+  const badge    = document.getElementById('turnoBadge');
+  const badgeTxt = document.getElementById('turnoBadgeTxt');
+
+  if (turnosSeleccionados.size === 0) {
+    badge.style.display = 'none';
+    return;
+  }
+
+  const labels = [...turnosSeleccionados].map(t => `${TURNOS[t].emoji} ${TURNOS[t].label}`).join('  +  ');
+  badgeTxt.innerHTML = `<i class="fas fa-check-circle"></i> ${labels}`;
+  badge.style.display = 'block';
+
+  // Aplicar horas a los días activos según turno(s) seleccionados
+  DIAS_SEMANA.forEach(dia => {
+    if (document.getElementById('dtoggle-' + dia.key)?.classList.contains('sel')) {
+      if (turnosSeleccionados.size === 2) {
+        // Doble turno: entrada del turno mañana, salida del turno tarde
+        const e   = document.getElementById('dent-' + dia.key);
+        const s   = document.getElementById('dsal-' + dia.key);
+        const tol = document.getElementById('dtol-' + dia.key);
+        if(e)   e.value   = TURNOS.manana.entrada;  // 08:00
+        if(s)   s.value   = TURNOS.tarde.salida;    // 20:00
+        if(tol) tol.value = 10;
+      } else {
+        // Un solo turno
+        const t   = TURNOS[[...turnosSeleccionados][0]];
+        const e   = document.getElementById('dent-' + dia.key);
+        const s   = document.getElementById('dsal-' + dia.key);
+        const tol = document.getElementById('dtol-' + dia.key);
+        if(e)   e.value   = t.entrada;
+        if(s)   s.value   = t.salida;
+        if(tol) tol.value = t.tolerancia;
+      }
     }
   });
 }
