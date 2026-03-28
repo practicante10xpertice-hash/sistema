@@ -217,6 +217,8 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
 .p-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
 
 /* ══ RESPONSIVE ══════════════════════════════════════════════ */
+.turno-card:hover { border-color:var(--accent)!important; background:rgba(99,132,255,.08)!important; transform:translateY(-2px); }
+.turno-card.turno-activo { border-color:var(--accent)!important; background:rgba(99,132,255,.15)!important; box-shadow:0 4px 20px rgba(99,132,255,.25); }
 @media(max-width:900px){.sala-layout{grid-template-columns:1fr}.colab-form-grid{grid-template-columns:1fr}}
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%)}
@@ -525,33 +527,49 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
               </div>
 
               <!-- Horario por día -->
-              <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:20px">
-                <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
-                  <i class="fas fa-calendar-week" style="color:var(--accent)"></i> Horario Laboral por Día
-                </div>
-                <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Selecciona los días laborales y configura el horario de cada uno de forma independiente.</p>
-                <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
-                  <span style="font-size:13px;color:var(--muted)">Días laborales:</span>
-                  <button type="button" class="filter-badge f-active" onclick="selDias('lv')">LUN–VIE</button>
-                  <button type="button" class="filter-badge f-active" onclick="selDias('todos')">Todos</button>
-                  <button type="button" class="filter-badge" onclick="selDias('ninguno')">Ninguno</button>
-                </div>
-                <div class="horario-dias-grid" id="horarioDiasGrid"></div>
-              </div>
+             <!-- Horario por día -->
+<div style="border-top:1px solid var(--border);margin-top:4px;padding-top:20px">
+  <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
+    <i class="fas fa-calendar-week" style="color:var(--accent)"></i> Horario Laboral por Día
+  </div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Selecciona el turno y los días laborales.</p>
 
-              <div class="d-flex gap-3 mt-4 flex-wrap">
-                <button class="btn-primary-custom" onclick="guardarColaborador()" id="btnGuardarColab">
-                  <i class="fas fa-save"></i> <span id="btnGuardarColabTxt">Guardar Colaborador</span>
-                </button>
-                <button class="btn-outline-custom" onclick="limpiarFormColab()">
-                  <i class="fas fa-broom"></i> Limpiar
-                </button>
-                <button class="btn-outline-custom" onclick="cancelarEditColab()" id="btnCancelarColab" style="display:none">
-                  <i class="fas fa-times"></i> Cancelar Edición
-                </button>
-              </div>
-            </div>
-          </div>
+  <!-- SELECCIÓN DE TURNO -->
+  <div style="margin-bottom:20px">
+    <div style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:10px">
+      <i class="fas fa-clock" style="color:var(--warning)"></i> Turno de trabajo
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+
+      <div class="turno-card" id="turno-manana" onclick="seleccionarTurno('manana')"
+        style="flex:1;min-width:160px;max-width:220px;padding:16px;border-radius:12px;border:2px solid var(--border2);background:var(--card2);cursor:pointer;transition:all .25s;text-align:center">
+        <div style="font-size:28px;margin-bottom:6px">🌅</div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">Turno Mañana</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">08:00 – 14:00</div>
+      </div>
+
+      <div class="turno-card" id="turno-tarde" onclick="seleccionarTurno('tarde')"
+        style="flex:1;min-width:160px;max-width:220px;padding:16px;border-radius:12px;border:2px solid var(--border2);background:var(--card2);cursor:pointer;transition:all .25s;text-align:center">
+        <div style="font-size:28px;margin-bottom:6px">🌤️</div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">Turno Tarde</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">14:00 – 20:00</div>
+      </div>
+
+    </div>
+    <div id="turnoBadge" style="display:none;margin-top:10px">
+      <span id="turnoBadgeTxt" class="badge-custom badge-blue"></span>
+    </div>
+  </div>
+
+  <!-- DÍAS Y HORAS -->
+  <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+    <span style="font-size:13px;color:var(--muted)">Días laborales:</span>
+    <button type="button" class="filter-badge f-active" onclick="selDias('lv')">LUN–VIE</button>
+    <button type="button" class="filter-badge f-active" onclick="selDias('todos')">Todos</button>
+    <button type="button" class="filter-badge" onclick="selDias('ninguno')">Ninguno</button>
+  </div>
+  <div class="horario-dias-grid" id="horarioDiasGrid"></div>
+</div>
 
           <!-- TAB: BUSCAR POR ID -->
           <div class="personal-tab-content" id="ptcontent-buscar">
@@ -1764,6 +1782,32 @@ async function cerrarSala(){
   document.getElementById('reunionSalaScreen').style.display='none';
   document.getElementById('reunionJoinScreen').style.display='block';
   showPage('grupos');
+}
+  // ══ TURNOS ══════════════════════════════════════════════════
+const TURNOS = {
+  manana: { entrada:'08:00', salida:'14:00', tolerancia:10, emoji:'🌅', label:'Turno Mañana (08:00 – 14:00)' },
+  tarde:  { entrada:'14:00', salida:'20:00', tolerancia:10, emoji:'🌤️', label:'Turno Tarde (14:00 – 20:00)' }
+};
+let turnoActual = null;
+
+function seleccionarTurno(tipo) {
+  turnoActual = tipo;
+  document.querySelectorAll('.turno-card').forEach(c => c.classList.remove('turno-activo'));
+  document.getElementById('turno-' + tipo).classList.add('turno-activo');
+  const t = TURNOS[tipo];
+  const badge = document.getElementById('turnoBadge');
+  document.getElementById('turnoBadgeTxt').innerHTML = `<i class="fas fa-check-circle"></i> ${t.emoji} ${t.label}`;
+  badge.style.display = 'block';
+  DIAS_SEMANA.forEach(dia => {
+    if (document.getElementById('dtoggle-' + dia.key)?.classList.contains('sel')) {
+      const e   = document.getElementById('dent-' + dia.key);
+      const s   = document.getElementById('dsal-' + dia.key);
+      const tol = document.getElementById('dtol-' + dia.key);
+      if(e)   e.value   = t.entrada;
+      if(s)   s.value   = t.salida;
+      if(tol) tol.value = t.tolerancia;
+    }
+  });
 }
 window.addEventListener('beforeunload',()=>{
   if(!salaActiva)return;
