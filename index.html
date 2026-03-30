@@ -1270,18 +1270,146 @@ async function eliminarColab(id){const res=await api('eliminarUsuario',{id});if(
 
 async function cargarGrupos(){
   const res=await api('getGrupos');if(!res.ok)return;
-  const grupos=res.grupos||[];const colRes=await api('getUsuarios',{});const todos=colRes.usuarios||[];
+  const grupos=res.grupos||[];
+  const colRes=await api('getUsuarios',{});
+  const todos=(colRes.usuarios||[]).filter(u=>u.rol==='colaborador'&&parseInt(u.activo)===1);
   const lista=document.getElementById('listaGrupos');
   if(!grupos.length){lista.innerHTML='<div class="card-panel text-center py-5"><i class="fas fa-users" style="font-size:48px;color:var(--muted);display:block;margin-bottom:16px"></i><p style="color:var(--muted)">Sin grupos. Crea el primero.</p></div>';return;}
   lista.innerHTML=grupos.map(g=>{
-    const miembros=g.miembros||[];const ids=miembros.map(m=>parseInt(m.id));const disp=todos.filter(u=>u.rol==='colaborador'&&!ids.includes(parseInt(u.id)));
-    return`<div class="card-panel mb-3" style="border-top:4px solid ${g.color}"><div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3"><div class="d-flex align-items-center gap-3"><div style="width:46px;height:46px;border-radius:13px;background:${g.color}22;border:2px solid ${g.color};display:flex;align-items:center;justify-content:center;color:${g.color};font-size:20px"><i class="fas fa-users"></i></div><div><div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text)">${g.nombre}</div><div style="font-size:13px;color:var(--muted)">${g.descripcion||''}</div><span class="badge-custom badge-blue" style="font-size:11px;margin-top:4px">${miembros.length} miembros</span></div></div><div class="d-flex gap-2"><button class="btn-primary-custom" style="font-size:13px;padding:8px 14px" onclick="iniciarReunion(${g.id},'${g.nombre}')"><i class="fas fa-video"></i> Iniciar Reunión</button><button class="btn-danger-custom" style="padding:8px 12px" onclick="if(confirm('¿Eliminar grupo?'))eliminarGrupo(${g.id})"><i class="fas fa-trash"></i></button></div></div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">${miembros.map(m=>`<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:6px 12px"><div style="width:28px;height:28px;border-radius:50%;background:${g.color}33;color:${g.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${(m.nombre||'')[0]}${(m.apellido||'')[0]}</div><div style="font-size:13px;font-weight:600;color:var(--text)">${m.nombre||''} ${m.apellido||''}</div><button onclick="quitarMiembro(${g.id},${m.id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;margin-left:4px"><i class="fas fa-times"></i></button></div>`).join('')}${miembros.length===0?'<span style="font-size:13px;color:var(--muted)">Sin miembros — agrega colaboradores abajo</span>':''}</div><div class="d-flex gap-2"><select id="selMiembro${g.id}" class="form-control-custom" style="flex:1"><option value="">— Agregar colaborador al grupo —</option>${disp.map(u=>`<option value="${u.id}">${u.nombre} ${u.apellido}${u.cargo?' — '+u.cargo:''}</option>`).join('')}</select><button class="btn-outline-custom" onclick="agregarMiembro(${g.id})"><i class="fas fa-plus"></i> Agregar</button></div></div>`;
+    const miembros=g.miembros||[];
+    const ids=miembros.map(m=>parseInt(m.id));
+    const disp=todos.filter(u=>!ids.includes(parseInt(u.id)));
+
+    // Chips de miembros actuales
+    const miembrosHtml=miembros.length
+      ? miembros.map(m=>`
+          <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:6px 12px">
+            <div style="width:28px;height:28px;border-radius:50%;background:${g.color}33;color:${g.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${(m.nombre||'')[0]}${(m.apellido||'')[0]}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${m.nombre||''} ${m.apellido||''}</div>
+            <button onclick="quitarMiembro(${g.id},${m.id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;margin-left:4px" title="Quitar del grupo"><i class="fas fa-times"></i></button>
+          </div>`).join('')
+      : '<span style="font-size:13px;color:var(--muted)">Sin miembros aún — agrega colaboradores abajo</span>';
+
+    // Panel de agregar con checkboxes + búsqueda
+    const checkboxItems=disp.map(u=>`
+      <label id="chk-item-${g.id}-${u.id}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .15s"
+        onmouseover="this.style.background='rgba(99,132,255,.08)'" onmouseout="this.style.background='transparent'">
+        <input type="checkbox" id="chk-${g.id}-${u.id}" value="${u.id}"
+          style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:${g.color}33;color:${g.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">${(u.nombre||'')[0]}${(u.apellido||'')[0]}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.nombre||''} ${u.apellido||''}</div>
+          <div style="font-size:11px;color:var(--muted)">${u.cargo||''} ${u.departamento?'· '+u.departamento:''}</div>
+        </div>
+      </label>`).join('');
+
+    return`
+    <div class="card-panel mb-3" style="border-top:4px solid ${g.color}">
+      <!-- Encabezado grupo -->
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:46px;height:46px;border-radius:13px;background:${g.color}22;border:2px solid ${g.color};display:flex;align-items:center;justify-content:center;color:${g.color};font-size:20px"><i class="fas fa-users"></i></div>
+          <div>
+            <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--text)">${g.nombre}</div>
+            <div style="font-size:13px;color:var(--muted)">${g.descripcion||''}</div>
+            <span class="badge-custom badge-blue" style="font-size:11px;margin-top:4px">${miembros.length} miembro${miembros.length!==1?'s':''}</span>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-primary-custom" style="font-size:13px;padding:8px 14px" onclick="iniciarReunion(${g.id},'${g.nombre}')"><i class="fas fa-video"></i> Iniciar Reunión</button>
+          <button class="btn-danger-custom" style="padding:8px 12px" onclick="if(confirm('¿Eliminar grupo?'))eliminarGrupo(${g.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+
+      <!-- Chips miembros actuales -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">${miembrosHtml}</div>
+
+      <!-- Sección agregar -->
+      ${disp.length>0?`
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">
+          <i class="fas fa-user-plus" style="color:var(--accent)"></i> Agregar colaboradores
+        </div>
+        <!-- Buscador -->
+        <div style="position:relative;margin-bottom:8px">
+          <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none"></i>
+          <input type="text" placeholder="Buscar por nombre, cargo o área..."
+            oninput="filtrarChkGrupo(${g.id},this.value)"
+            style="width:100%;padding:8px 12px 8px 34px;background:var(--card2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;outline:none"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        </div>
+        <!-- Lista checkboxes -->
+        <div id="chkList-${g.id}" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:6px;background:var(--card2)">
+          ${checkboxItems||'<p style="color:var(--muted);font-size:13px;padding:8px">Todos los colaboradores ya están en el grupo.</p>'}
+        </div>
+        <!-- Botón agregar seleccionados -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px">
+          <span id="chkCount-${g.id}" style="font-size:12px;color:var(--muted)">0 seleccionados</span>
+          <button class="btn-primary-custom" style="font-size:13px;padding:8px 16px" onclick="agregarMiembrosSeleccionados(${g.id})">
+            <i class="fas fa-plus"></i> Agregar seleccionados
+          </button>
+        </div>
+      </div>`:'<div style="border-top:1px solid var(--border);padding-top:12px;font-size:13px;color:var(--muted)"><i class="fas fa-check-circle" style="color:var(--success)"></i> Todos los colaboradores activos ya están en este grupo.</div>'}
+    </div>`;
   }).join('');
+
+  // Inicializar contadores de checkboxes
+  grupos.forEach(g=>{
+    const lista=document.getElementById('chkList-'+g.id);
+    if(!lista)return;
+    lista.querySelectorAll('input[type=checkbox]').forEach(chk=>{
+      chk.addEventListener('change',()=>actualizarContadorChk(g.id));
+    });
+  });
 }
 
-async function crearGrupo(){const nombre=document.getElementById('gNombre').value.trim();if(!nombre){showMsg('El nombre es requerido','warning');return;}const res=await api('crearGrupo',{nombre,descripcion:document.getElementById('gDesc').value,color:document.getElementById('gColor').value,creado_por:SESSION.uid});if(res.ok){showMsg('Grupo creado','success');document.getElementById('gNombre').value='';document.getElementById('gDesc').value='';cargarGrupos();}}
+function actualizarContadorChk(gId){
+  const lista=document.getElementById('chkList-'+gId);if(!lista)return;
+  const n=lista.querySelectorAll('input[type=checkbox]:checked').length;
+  const cnt=document.getElementById('chkCount-'+gId);
+  if(cnt)cnt.textContent=n===0?'0 seleccionados':`${n} seleccionado${n!==1?'s':''}`;
+}
+
+function filtrarChkGrupo(gId,q){
+  const lista=document.getElementById('chkList-'+gId);if(!lista)return;
+  const termino=q.toLowerCase().trim();
+  lista.querySelectorAll('label[id^="chk-item-"]').forEach(label=>{
+    const txt=label.textContent.toLowerCase();
+    label.style.display=!termino||txt.includes(termino)?'flex':'none';
+  });
+}
+
+async function crearGrupo(){
+  const nombre=document.getElementById('gNombre').value.trim();
+  if(!nombre){showMsg('El nombre es requerido','warning');return;}
+  const res=await api('crearGrupo',{nombre,descripcion:document.getElementById('gDesc').value,color:document.getElementById('gColor').value,creado_por:SESSION.uid});
+  if(res.ok){showMsg('Grupo creado','success');document.getElementById('gNombre').value='';document.getElementById('gDesc').value='';cargarGrupos();}
+}
+
 async function eliminarGrupo(id){const res=await api('eliminarGrupo',{id});if(res.ok){showMsg('Grupo eliminado','success');cargarGrupos();}}
-async function agregarMiembro(gId){const uid=document.getElementById('selMiembro'+gId).value;if(!uid)return;const res=await api('agregarMiembro',{grupo_id:gId,usuario_id:uid});if(res.ok){showMsg('Miembro agregado','success');cargarGrupos();}}
+
+async function agregarMiembrosSeleccionados(gId){
+  const lista=document.getElementById('chkList-'+gId);if(!lista)return;
+  const seleccionados=[...lista.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value);
+  if(!seleccionados.length){showMsg('Selecciona al menos un colaborador','warning');return;}
+  showLoading(true);
+  let ok=0,err=0;
+  for(const uid of seleccionados){
+    const res=await api('agregarMiembro',{grupo_id:gId,usuario_id:uid});
+    res.ok?ok++:err++;
+  }
+  showLoading(false);
+  if(ok>0)showMsg(`✅ ${ok} colaborador${ok!==1?'es':''} agregado${ok!==1?'s':''} al grupo`+(err>0?` (${err} con error)`:''),'success');
+  else showMsg('Error al agregar colaboradores','danger');
+  cargarGrupos();
+}
+
+// Mantener compatibilidad con quitarMiembro
+async function agregarMiembro(gId){
+  const sel=document.getElementById('selMiembro'+gId);if(!sel||!sel.value)return;
+  const res=await api('agregarMiembro',{grupo_id:gId,usuario_id:sel.value});
+  if(res.ok){showMsg('Miembro agregado','success');cargarGrupos();}
+}
 async function quitarMiembro(gId,uId){const res=await api('quitarMiembro',{grupo_id:gId,usuario_id:uId});if(res.ok){showMsg('Miembro removido','success');cargarGrupos();}}
 
 async function iniciarReunion(gId,gNombre){
