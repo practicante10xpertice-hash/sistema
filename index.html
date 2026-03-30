@@ -1414,8 +1414,32 @@ async function quitarMiembro(gId,uId){const res=await api('quitarMiembro',{grupo
 
 async function iniciarReunion(gId,gNombre){
   const nombre=prompt('Nombre de la reunión:','Reunión '+new Date().toLocaleDateString('es-PE'));if(!nombre)return;
+
+  showLoading(true);
   const res=await api('crearSesion',{grupo_id:gId,nombre,creado_por:SESSION.uid});
-  if(res.ok){showMsg(`✅ Sala creada — Código: <strong style="letter-spacing:2px;color:var(--accent)">${res.codigo}</strong>`,'success');cargarGrupos();if(confirm(`Sala creada con código: ${res.codigo}\n¿Entrar ahora?`))abrirSala(res.id,res.codigo,nombre,res.agora_channel);}
+  if(!res.ok){showLoading(false);showMsg('Error al crear la sala: '+(res.msg||''),'danger');return;}
+
+  const sesionId=res.id;
+
+  // Pre-registrar a todos los miembros del grupo como participantes (estado pendiente)
+  // Esto permite que aparezcan en la lista aunque no hayan abierto la sala aún
+  const colRes=await api('getGrupos');
+  if(colRes.ok){
+    const grupo=(colRes.grupos||[]).find(g=>parseInt(g.id)===parseInt(gId));
+    if(grupo&&grupo.miembros&&grupo.miembros.length){
+      for(const m of grupo.miembros){
+        // unirseReunion con presente:false para marcarlos como "convocados"
+        await api('unirseReunion',{sesion_id:sesionId,usuario_id:m.id,presente:false});
+      }
+    }
+  }
+
+  showLoading(false);
+  showMsg(`✅ Sala creada — Código: <strong style="letter-spacing:2px;color:var(--accent)">${res.codigo}</strong>`,'success');
+  cargarGrupos();
+  cargarSesionesActivas();
+  if(confirm(`Sala creada con código: ${res.codigo}\n¿Entrar ahora?`))
+    abrirSala(res.id,res.codigo,nombre,res.agora_channel);
 }
 
 async function cargarSesionesActivas(){
@@ -1546,14 +1570,27 @@ async function abrirSala(id,codigo,nombre,channel){
 async function initAgora(sesionId,channel){
   try{
     agoraClient=AgoraRTC.createClient({mode:'rtc',codec:'vp8'});
-    agoraClient.on('user-published',handleUserPublished);agoraClient.on('user-unpublished',handleUserUnpublished);agoraClient.on('user-left',u=>{const el=document.getElementById('player-'+u.uid);if(el)el.remove();});
+    agoraClient.on('user-published',handleUserPublished);
+    agoraClient.on('user-unpublished',handleUserUnpublished);
+    agoraClient.on('user-left',u=>{const el=document.getElementById('player-'+u.uid);if(el)el.remove();});
     await agoraClient.join(AGORA_APP_ID,channel,null,null);
     try{[localTracks.audio,localTracks.video]=await AgoraRTC.createMicrophoneAndCameraTracks();}
-    catch(e1){try{localTracks.audio=await AgoraRTC.createMicrophoneAudioTrack();localTracks.video=null;camOn=false;}catch(e2){try{localTracks.video=await AgoraRTC.createCameraVideoTrack();localTracks.audio=null;micOn=false;}catch(e3){localTracks.audio=null;localTracks.video=null;camOn=false;micOn=false;}}}
-    mostrarVideoLocal();const toPublish=[localTracks.audio,localTracks.video].filter(t=>t);if(toPublish.length)await agoraClient.publish(toPublish);
-    await api('unirseReunion',{sesion_id:sesionId,usuario_id:SESSION.uid});
-    actualizarParticipantes();setInterval(actualizarParticipantes,6000);iniciarContadorCheckin();iniciarDuracion();
-  }catch(e){const g=document.getElementById('videoGrid');if(g)g.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--danger)"><i class="fas fa-exclamation-triangle" style="font-size:32px;display:block;margin-bottom:12px"></i>Error al conectar: ${e.message}<br><small style="color:var(--muted)">Verifica permisos de cámara y micrófono</small></div>`;}
+    catch(e1){try{localTracks.audio=await AgoraRTC.createMicrophoneAudioTrack();localTracks.video=null;camOn=false;}
+    catch(e2){try{localTracks.video=await AgoraRTC.createCameraVideoTrack();localTracks.audio=null;micOn=false;}
+    catch(e3){localTracks.audio=null;localTracks.video=null;camOn=false;micOn=false;}}}
+    mostrarVideoLocal();
+    const toPublish=[localTracks.audio,localTracks.video].filter(t=>t);
+    if(toPublish.length)await agoraClient.publish(toPublish);
+    // Marcar como PRESENTE (presente:true sobrescribe el registro previo pendiente)
+    await api('unirseReunion',{sesion_id:sesionId,usuario_id:SESSION.uid,presente:true});
+    actualizarParticipantes();
+    setInterval(actualizarParticipantes,6000);
+    iniciarContadorCheckin();
+    iniciarDuracion();
+  }catch(e){
+    const g=document.getElementById('videoGrid');
+    if(g)g.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--danger)"><i class="fas fa-exclamation-triangle" style="font-size:32px;display:block;margin-bottom:12px"></i>Error al conectar: ${e.message}<br><small style="color:var(--muted)">Verifica permisos de cámara y micrófono</small></div>`;
+  }
 }
 
 function mostrarVideoLocal(){const grid=document.getElementById('videoGrid');if(!grid)return;grid.innerHTML='';const div=document.createElement('div');div.className='video-item';div.id='local-player';if(localTracks.video){div.innerHTML=`<div class="video-label">${SESSION.nombre} (Tú)</div>`;grid.appendChild(div);localTracks.video.play('local-player');}else{div.innerHTML=`<div class="no-video-ph"><div class="nv-avatar">${SESSION.nombre.slice(0,2).toUpperCase()}</div><span style="font-size:12px">Sin cámara</span></div><div class="video-label">${SESSION.nombre} (Tú)</div>`;grid.appendChild(div);}}
@@ -1565,7 +1602,55 @@ async function hacerCheckin(auto=false){let foto='';if(camOn&&localTracks.video)
 function iniciarContadorCheckin(){setInterval(()=>{checkinSec--;if(checkinSec<0){hacerCheckin(true);checkinSec=checkinTotal;}const m=Math.floor(checkinSec/60),s=checkinSec%60;const pct=((checkinTotal-checkinSec)/checkinTotal)*100;const el=document.getElementById('timerCircle');if(el){el.textContent=`${m}:${s.toString().padStart(2,'0')}`;el.style.background=`conic-gradient(var(--accent) ${pct}%,rgba(99,132,255,.1) ${pct}%)`;}},1000);}
 let startTime=Date.now();
 function iniciarDuracion(){startTime=Date.now();setInterval(()=>{const s=Math.floor((Date.now()-startTime)/1000);const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;const el=document.getElementById('duracion');if(el)el.textContent=(h>0?h+':':'')+m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');},1000);}
-async function actualizarParticipantes(){if(!salaActiva)return;const res=await api('getParticipantes',{sesion_id:salaActiva.id});if(!res.ok)return;const tp=document.getElementById('totalPart');if(tp)tp.textContent=res.total;const lista=document.getElementById('listaParticipantes');if(!lista)return;lista.innerHTML=(res.participantes||[]).map(p=>`<div class="p-item"><div class="p-av">${(p.nombre||'')[0]}${(p.apellido||'')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text)">${p.nombre||''} ${p.apellido||''}</div><div style="font-size:11px;color:var(--muted)">${p.cargo||''}</div></div><span class="badge-custom ${p.presente?'badge-green':'badge-red'}" style="font-size:10px;padding:3px 8px">${p.presente?'● Activo':'○ Inactivo'}</span></div>`).join('');}
+async function actualizarParticipantes(){
+  if(!salaActiva)return;
+  const res=await api('getParticipantes',{sesion_id:salaActiva.id});
+  if(!res.ok)return;
+  const partic=res.participantes||[];
+  const presentes=partic.filter(p=>p.presente).length;
+  const total=partic.length;
+  const tp=document.getElementById('totalPart');
+  if(tp)tp.textContent=`${presentes}/${total}`;
+  const lista=document.getElementById('listaParticipantes');
+  if(!lista)return;
+  if(!partic.length){lista.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Sin participantes registrados</p>';return;}
+
+  // Separar en presentes y pendientes
+  const listaPresentes=partic.filter(p=>p.presente);
+  const listaPendientes=partic.filter(p=>!p.presente);
+
+  let html='';
+  if(listaPresentes.length){
+    html+=`<div style="font-size:10px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding:0 4px">
+      <i class="fas fa-circle" style="font-size:7px"></i> En sala (${listaPresentes.length})
+    </div>`;
+    html+=listaPresentes.map(p=>`
+      <div class="p-item" style="border-left:3px solid var(--success);padding-left:10px;margin-bottom:4px">
+        <div class="p-av" style="background:linear-gradient(135deg,var(--success),#059669)">${(p.nombre||'')[0]}${(p.apellido||'')[0]}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${p.nombre||''} ${p.apellido||''}</div>
+          <div style="font-size:11px;color:var(--muted)">${p.cargo||''}</div>
+        </div>
+        <span class="badge-custom badge-green" style="font-size:10px;padding:3px 8px">● Presente</span>
+      </div>`).join('');
+  }
+
+  if(listaPendientes.length){
+    html+=`<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px;padding:0 4px">
+      <i class="fas fa-clock" style="font-size:9px"></i> Pendientes (${listaPendientes.length})
+    </div>`;
+    html+=listaPendientes.map(p=>`
+      <div class="p-item" style="border-left:3px solid var(--border2);padding-left:10px;margin-bottom:4px;opacity:.7">
+        <div class="p-av" style="background:rgba(148,163,200,.2);color:var(--muted)">${(p.nombre||'')[0]}${(p.apellido||'')[0]}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text2)">${p.nombre||''} ${p.apellido||''}</div>
+          <div style="font-size:11px;color:var(--muted)">${p.cargo||''}</div>
+        </div>
+        <span class="badge-custom badge-gray" style="font-size:10px;padding:3px 8px">○ Pendiente</span>
+      </div>`).join('');
+  }
+  lista.innerHTML=html;
+}
 async function salirSala(){if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}if(localTracks.video){localTracks.video.stop();localTracks.video.close();}if(agoraClient)await agoraClient.leave();if(salaActiva)await api('salirReunion',{sesion_id:salaActiva.id,usuario_id:SESSION.uid});salaActiva=null;document.getElementById('reunionSalaScreen').style.display='none';document.getElementById('reunionJoinScreen').style.display='block';document.getElementById('codigoReunion').value='';}
 async function cerrarSala(){if(!confirm('¿Cerrar la sala para todos los participantes?'))return;if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}if(localTracks.video){localTracks.video.stop();localTracks.video.close();}if(agoraClient)await agoraClient.leave();if(salaActiva)await api('cerrarSesion',{id:salaActiva.id});salaActiva=null;document.getElementById('reunionSalaScreen').style.display='none';document.getElementById('reunionJoinScreen').style.display='block';showPage('grupos');}
 
