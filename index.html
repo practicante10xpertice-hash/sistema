@@ -1530,7 +1530,7 @@ async function iniciarReunion(gId,gNombre){
 async function cargarSesionesActivas(){
   const panel=document.getElementById('sesionesActivasPanel');if(!panel)return;
   const res=await api('getGrupos');if(!res.ok)return;let html='';
-  (res.grupos||[]).forEach(g=>{if(g.sesion_activa){html+=`<div class="card-panel mb-3" style="border-left:4px solid var(--success)"><div style="font-size:11px;color:var(--success);font-weight:700;letter-spacing:1px;margin-bottom:6px">● SALA EN VIVO</div><div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)">${g.sesion_activa.nombre||''}</div><div style="font-size:13px;color:var(--muted);margin:4px 0">Grupo: ${g.nombre}</div><div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);letter-spacing:3px;margin:10px 0">${g.sesion_activa.codigo||''}</div><button onclick="abrirSala(${g.sesion_activa.id},'${g.sesion_activa.codigo}','${g.sesion_activa.nombre}','${g.sesion_activa.agora_channel}')" class="btn-primary-custom w-100" style="justify-content:center"><i class="fas fa-sign-in-alt"></i> Entrar a la Sala</button></div>`;}});
+  (res.grupos||[]).forEach(g=>{if(g.sesion_activa){html+=`<div class="card-panel mb-3" style="border-left:4px solid var(--success)"><div style="font-size:11px;color:var(--success);font-weight:700;letter-spacing:1px;margin-bottom:6px">● SALA EN VIVO</div><div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)">${g.sesion_activa.nombre||''}</div><div style="font-size:13px;color:var(--muted);margin:4px 0">Grupo: ${g.nombre}</div><div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);letter-spacing:3px;margin:10px 0">${g.sesion_activa.codigo||''}</div><div class="d-flex flex-column gap-2"><button onclick="abrirSala(${g.sesion_activa.id},'${g.sesion_activa.codigo}','${g.sesion_activa.nombre}','${g.sesion_activa.agora_channel}')" class="btn-primary-custom w-100" style="justify-content:center"><i class="fas fa-sign-in-alt"></i> Entrar a la Sala</button><button onclick="cerrarSalaDirecta(${g.sesion_activa.id})" class="btn-danger-custom w-100" style="justify-content:center"><i class="fas fa-stop-circle"></i> Cerrar y Eliminar Sala</button></div></div>`
   panel.innerHTML=html;
 }
 
@@ -1792,6 +1792,19 @@ async function cerrarSala(){
   document.getElementById('reunionSalaScreen').style.display='none';
   document.getElementById('reunionJoinScreen').style.display='block';
   showPage('grupos');
+}
+async function cerrarSalaDirecta(id){
+  if(!confirm('¿Cerrar esta sala? Se eliminará para todos los participantes.'))return;
+  showLoading(true);
+  const res=await api('cerrarSesion',{id});
+  showLoading(false);
+  if(res.ok){
+    showMsg('✅ Sala cerrada correctamente','success');
+    cargarGrupos();
+    cargarSesionesActivas();
+  } else {
+    showMsg('❌ Error al cerrar la sala: '+(res.msg||''),'danger');
+  }
 }
 
 window.addEventListener('beforeunload',()=>{
