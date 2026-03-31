@@ -665,7 +665,33 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
     </main>
   </div>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-</div>
+
+  <!-- BANNER FLOTANTE: REUNIÓN ACTIVA -->
+  <div id="bannerReunionActiva" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:8000;
+    background:linear-gradient(135deg,#0b2018,#0a1f2e);border:1px solid rgba(34,211,168,.4);
+    border-radius:18px;padding:18px 22px;box-shadow:0 12px 50px rgba(0,0,0,.7),0 0 0 1px rgba(34,211,168,.1);
+    align-items:center;gap:16px;max-width:500px;width:calc(100vw - 40px)">
+    <div style="width:46px;height:46px;border-radius:50%;background:rgba(34,211,168,.15);border:2px solid var(--success);
+      display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;animation:lp 1.4s infinite">🎥</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:10px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">● Reunión en curso — tu grupo te espera</div>
+      <div style="font-family:var(--font-head);font-size:14px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="bannerReunionNombre"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Grupo: <span id="bannerReunionGrupo" style="color:var(--text2)"></span> &nbsp;·&nbsp; Código: <strong style="color:var(--accent);letter-spacing:2px" id="bannerReunionCodigo"></strong></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+      <button onclick="entrarDesdeNotificacion()" style="padding:10px 16px;border-radius:10px;background:linear-gradient(135deg,var(--success),#059669);
+        color:#fff;border:none;font-family:var(--font-head);font-size:13px;font-weight:700;cursor:pointer;
+        display:flex;align-items:center;gap:7px;white-space:nowrap;box-shadow:0 4px 16px rgba(34,211,168,.35)">
+        <i class="fas fa-video"></i> Unirse ahora
+      </button>
+      <button onclick="document.getElementById('bannerReunionActiva').style.display='none'"
+        style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-align:center;padding:2px">
+        Ignorar
+      </button>
+    </div>
+  </div>
+
+</div><!-- /appScreen -->
 
 <!-- MODAL DETALLE COLABORADOR -->
 <div class="modal-overlay" id="modalColab" style="display:none" onclick="if(event.target===this)cerrarModalColab()">
@@ -812,6 +838,8 @@ async function cargarDashboard(){
   const cont=document.getElementById('dashboardContent');
   const res=await api(SESSION.rol==='admin'?'getStatsAdmin':'getStatsColaborador',{usuario_id:SESSION.uid});
   if(!res.ok){cont.innerHTML='<div class="alert-danger-msg"><i class="fas fa-exclamation-circle"></i> Error al cargar dashboard: '+(res.msg||'')+'</div>';return;}
+  // Verificar sala activa para colaboradores cada vez que cargan el dashboard
+  if(SESSION.rol!=='admin')verificarSalaActivaParaColaborador();
   if(SESSION.rol==='admin'){
     cont.innerHTML=`<div class="row g-3 mb-4">
       <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-users"></i></div><div class="stat-value">${res.total_colaboradores||0}</div><div class="stat-label">Colaboradores Activos</div></div></div>
@@ -858,8 +886,58 @@ async function registrarAsistencia(tipo){
   showLoading(true);
   const res=await api('registrarAsistencia',{usuario_id:SESSION.uid,tipo,latitud:gpsLat||0,longitud:gpsLng||0,ubicacion_texto:gpsText||'',foto_path:''});
   showLoading(false);
-  if(res&&res.ok){showMsg(res.msg||'Registrado correctamente','success');await cargarEstadoAsistencia();cargarDashboard();}
+  if(res&&res.ok){
+    showMsg(res.msg||'Registrado correctamente','success');
+    await cargarEstadoAsistencia();
+    cargarDashboard();
+    // Verificar si hay una reunión activa para el colaborador
+    verificarSalaActivaParaColaborador();
+  }
   else showMsg((res&&res.msg)||'Error al registrar. Intenta de nuevo.','danger');
+}
+
+async function verificarSalaActivaParaColaborador(){
+  // Buscar si el colaborador pertenece a algún grupo con sesión activa
+  const res=await api('getGrupos');
+  if(!res.ok)return;
+  const grupos=res.grupos||[];
+  let salaEncontrada=null;
+  let grupoEncontrado=null;
+  for(const g of grupos){
+    if(!g.sesion_activa)continue;
+    const miembros=g.miembros||[];
+    const esMiembro=miembros.some(m=>parseInt(m.id)===parseInt(SESSION.uid));
+    if(esMiembro){salaEncontrada=g.sesion_activa;grupoEncontrado=g;break;}
+  }
+  if(!salaEncontrada)return;
+
+  // Guardar miembros para la sala
+  salaGrupoMiembros=grupoEncontrado.miembros||[];
+
+  // Mostrar banner de reunión activa sobre la pantalla de asistencia
+  const banner=document.getElementById('bannerReunionActiva');
+  if(banner){
+    document.getElementById('bannerReunionNombre').textContent=salaEncontrada.nombre||'Reunión';
+    document.getElementById('bannerReunionGrupo').textContent=grupoEncontrado.nombre||'';
+    document.getElementById('bannerReunionCodigo').textContent=salaEncontrada.codigo||'';
+    banner.style.display='flex';
+    // Auto-ocultar tras 30 seg si no hace clic
+    clearTimeout(banner._timer);
+    banner._timer=setTimeout(()=>{banner.style.display='none';},30000);
+    // Guardar datos para entrar al hacer clic
+    banner._salaId=salaEncontrada.id;
+    banner._codigo=salaEncontrada.codigo;
+    banner._nombre=salaEncontrada.nombre;
+    banner._channel=salaEncontrada.agora_channel;
+  }
+}
+
+function entrarDesdeNotificacion(){
+  const banner=document.getElementById('bannerReunionActiva');
+  if(!banner)return;
+  banner.style.display='none';
+  abrirSala(banner._salaId,banner._codigo,banner._nombre,banner._channel);
+  showPage('reunion');
 }
 
 async function toggleCameraAsist(){const enabled=document.getElementById('enableCamera').checked;const sec=document.getElementById('cameraSection');if(enabled){sec.style.display='block';try{localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});document.getElementById('videoPreview').srcObject=localStream;}catch(e){alert('No se pudo acceder a la cámara: '+e.message);document.getElementById('enableCamera').checked=false;sec.style.display='none';}}else{sec.style.display='none';if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}}}
@@ -1556,12 +1634,14 @@ async function buscarSala(){
   const res=await api('getSesion',{codigo});
   showLoading(false);
   if(!res.ok){document.getElementById('joinMsg').innerHTML='<div class="alert-danger-msg">Sala no encontrada o inactiva.</div>';return;}
-  // Cargar miembros del grupo de esta sesión
+
+  // Cargar miembros del grupo de esta sesión para mostrar pendientes
   salaGrupoMiembros=[];
-  if(res.sesion.grupo_id){
+  const grupoId=res.sesion?.grupo_id||res.sesion?.grupo?.id||null;
+  if(grupoId){
     const colRes=await api('getGrupos');
     if(colRes.ok){
-      const grupo=(colRes.grupos||[]).find(g=>parseInt(g.id)===parseInt(res.sesion.grupo_id));
+      const grupo=(colRes.grupos||[]).find(g=>parseInt(g.id)===parseInt(grupoId));
       if(grupo&&grupo.miembros)salaGrupoMiembros=grupo.miembros;
     }
   }
