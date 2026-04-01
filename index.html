@@ -742,10 +742,21 @@ async function api(accion,data={}){
 
 function limpiarHora(v){
   if(v===null||v===undefined||v==='')return null;
-  if(typeof v==='number'){const m=Math.round(v*24*60);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+  if(typeof v==='number'){
+    // Número decimal de Google Sheets (fracción de día)
+    const totalMin=Math.round(v*24*60);
+    return String(Math.floor(totalMin/60)).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0');
+  }
   const s=String(v).trim();
+  // Formato HH:MM o HH:MM:SS
   if(/^\d{1,2}:\d{2}/.test(s))return s.slice(0,5);
+  // ISO con T
   if(s.includes('T')){const p=s.split('T')[1];if(p)return p.slice(0,5);}
+  // Fecha 1899-12-30 HH:MM (Google Sheets serializado como string)
+  if(s.includes('1899')||s.includes('1900')){
+    const match=s.match(/(\d{1,2}):(\d{2})/);
+    if(match)return match[1].padStart(2,'0')+':'+match[2];
+  }
   return null;
 }
 
