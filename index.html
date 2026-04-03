@@ -1287,22 +1287,148 @@ function capturePhoto(){
 function resetPhoto(){document.getElementById('videoPreview').style.display='block';document.getElementById('photoCanvas').style.display='none';document.getElementById('btnResetPhoto').style.display='none';fotoCaptured=false;toggleCameraAsist();}
 
 async function cargarHistorial(){
-  const mes=document.getElementById('filtroMes').value;const anio=document.getElementById('filtroAnio').value;
-  showLoading(true);const res=await api('getAsistenciasMes',{usuario_id:SESSION.uid,mes,anio});showLoading(false);
+  const mes=document.getElementById('filtroMes').value;
+  const anio=document.getElementById('filtroAnio').value;
+
+  showLoading(true);
+  const res=await api('getAsistenciasMes',{usuario_id:SESSION.uid,mes,anio});
+  showLoading(false);
   if(!res.ok)return;
+
   const meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const r=res.resumen||{};
-  document.getElementById('historialStats').innerHTML=`<div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-calendar-check"></i></div><div class="stat-value">${r.dias_presentes||0}</div><div class="stat-label">Días Presentes</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-purple"><i class="fas fa-hourglass"></i></div><div class="stat-value">${r.total_horas||0}h ${r.total_minutos||0}m</div><div class="stat-label">Total Horas</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-clock-rotate-left"></i></div><div class="stat-value">${r.tardanzas||0}</div><div class="stat-label">Tardanzas</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-calendar-days"></i></div><div class="stat-value">${meses[parseInt(mes)]}</div><div class="stat-label">${anio}</div></div></div>`;
   const rows=res.asistencias||[];
-  if(!rows.length){document.getElementById('historialTable').innerHTML='<p style="color:var(--muted);padding:16px;font-size:14px">Sin registros para este período.</p>';return;}
-  const pf={};rows.forEach(r=>{if(!pf[r.fecha])pf[r.fecha]=[];pf[r.fecha].push(r);});
-  let html=`<table class="table-custom"><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th><th>Estado</th></tr></thead><tbody>`;
-  Object.keys(pf).sort().reverse().forEach(f=>{
-    const regs=pf[f];const e=regs.find(r=>r.tipo==='entrada');const s=regs.find(r=>r.tipo==='salida');
-    let seg=0;if(e&&s){const[he,me]=String(e.hora).split(':').map(Number);const[hs,ms]=String(s.hora).split(':').map(Number);seg=(hs*3600+ms*60)-(he*3600+me*60);}
-    html+=`<tr><td><strong>${f}</strong></td><td>${e?String(e.hora).slice(0,5):'—'}</td><td>${s?String(s.hora).slice(0,5):'—'}</td><td>${seg>0?Math.floor(seg/3600)+'h '+Math.floor((seg%3600)/60)+'m':'—'}</td><td>${!e?'<span class="badge-custom badge-red">Falta</span>':parseInt(e.tardanza)?`<span class="badge-custom badge-orange">+${e.minutos_tardanza}min tarde</span>`:'<span class="badge-custom badge-green">✓ A tiempo</span>'}</td></tr>`;
+
+  // agrupar por fecha
+  const pf={};
+  rows.forEach(r=>{
+    if(!pf[r.fecha]) pf[r.fecha]=[];
+    pf[r.fecha].push(r);
   });
-  document.getElementById('historialTable').innerHTML=html+'</tbody></table>';
+
+  let diasPresentes=0;
+  let tardanzas=0;
+  let totalMin=0;
+
+  Object.keys(pf).forEach(f=>{
+    const regs=pf[f];
+
+    const em=regs.find(r=>r.tipo==='entrada_manana');
+    const sm=regs.find(r=>r.tipo==='salida_manana');
+    const et=regs.find(r=>r.tipo==='entrada_tarde');
+    const st=regs.find(r=>r.tipo==='salida_tarde');
+
+    if(em || et) diasPresentes++;
+
+    if(em && parseInt(em.tardanza||0)===1) tardanzas++;
+    if(et && parseInt(et.tardanza||0)===1) tardanzas++;
+
+    function calcMin(e,s){
+      if(!e || !s) return 0;
+      const he=String(e.hora).slice(0,5).split(':').map(Number);
+      const hs=String(s.hora).slice(0,5).split(':').map(Number);
+      return (hs[0]*60+hs[1])-(he[0]*60+he[1]);
+    }
+
+    totalMin += calcMin(em,sm);
+    totalMin += calcMin(et,st);
+  });
+
+  document.getElementById('historialStats').innerHTML=`
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon icon-green"><i class="fas fa-calendar-check"></i></div>
+        <div class="stat-value">${diasPresentes}</div>
+        <div class="stat-label">Días Presentes</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon icon-purple"><i class="fas fa-hourglass"></i></div>
+        <div class="stat-value">${Math.floor(totalMin/60)}h ${totalMin%60}m</div>
+        <div class="stat-label">Total Horas</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon icon-orange"><i class="fas fa-clock-rotate-left"></i></div>
+        <div class="stat-value">${tardanzas}</div>
+        <div class="stat-label">Tardanzas</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon icon-blue"><i class="fas fa-calendar-days"></i></div>
+        <div class="stat-value">${meses[parseInt(mes)]}</div>
+        <div class="stat-label">${anio}</div>
+      </div>
+    </div>
+  `;
+
+  if(!rows.length){
+    document.getElementById('historialTable').innerHTML='<p style="color:var(--muted);padding:16px;font-size:14px">Sin registros para este período.</p>';
+    return;
+  }
+
+  let html=`
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Entrada Mañana</th>
+          <th>Salida Mañana</th>
+          <th>Entrada Tarde</th>
+          <th>Salida Tarde</th>
+          <th>Horas</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  Object.keys(pf).sort().reverse().forEach(f=>{
+    const regs=pf[f];
+
+    const em=regs.find(r=>r.tipo==='entrada_manana');
+    const sm=regs.find(r=>r.tipo==='salida_manana');
+    const et=regs.find(r=>r.tipo==='entrada_tarde');
+    const st=regs.find(r=>r.tipo==='salida_tarde');
+
+    function calcMin(e,s){
+      if(!e || !s) return 0;
+      const he=String(e.hora).slice(0,5).split(':').map(Number);
+      const hs=String(s.hora).slice(0,5).split(':').map(Number);
+      return (hs[0]*60+hs[1])-(he[0]*60+he[1]);
+    }
+
+    const minTot = calcMin(em,sm) + calcMin(et,st);
+    const horasTxt = minTot>0 ? `${Math.floor(minTot/60)}h ${minTot%60}m` : '—';
+
+    let estado='—';
+    if((em && parseInt(em.tardanza||0)===1) || (et && parseInt(et.tardanza||0)===1)){
+      const t1 = em && parseInt(em.tardanza||0)===1 ? parseInt(em.minutos_tardanza||0) : 0;
+      const t2 = et && parseInt(et.tardanza||0)===1 ? parseInt(et.minutos_tardanza||0) : 0;
+      estado = `<span class="badge-custom badge-orange">+${t1+t2}min tarde</span>`;
+    }else if(em || et){
+      estado = '<span class="badge-custom badge-green">✓ A tiempo</span>';
+    }else{
+      estado = '<span class="badge-custom badge-red">Falta</span>';
+    }
+
+    html += `
+      <tr>
+        <td><strong>${f}</strong></td>
+        <td>${em ? String(em.hora).slice(0,5) : '—'}</td>
+        <td>${sm ? String(sm.hora).slice(0,5) : '—'}</td>
+        <td>${et ? String(et.hora).slice(0,5) : '—'}</td>
+        <td>${st ? String(st.hora).slice(0,5) : '—'}</td>
+        <td>${horasTxt}</td>
+        <td>${estado}</td>
+      </tr>
+    `;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('historialTable').innerHTML=html;
 }
 
 async function cambiarPassword(){
