@@ -1959,9 +1959,9 @@ async function iniciarReunion(gId, gNombre){
   cargarGrupos();
   cargarSesionesActivas();
 
-  if(confirm(`Sala creada con código: ${res.codigo}\n¿Entrar ahora?`)){
+ if(confirm(`Sala creada con código: ${res.codigo}\n¿Entrar ahora?`)){
   showPage('reunion');
-  await abrirSala(res.id, res.codigo, nombre, res.agora_channel, gId);
+  await abrirSala(res.id,res.codigo,nombre,res.agora_channel,gId);
 }
 
 async function cargarSesionesActivas(){
