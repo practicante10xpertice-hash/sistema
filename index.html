@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 :root{
-  --ink:#080c15;--surface:#0e1525;--card:#111827;--card2:#161f30;
+  --ink:#080c15;--surface:#0e1525;--c:#ard111827;--card2:#161f30;
   --border:rgba(99,132,255,.12);--border2:rgba(255,255,255,.06);
   --accent:#6384ff;--accent2:#a78bfa;--success:#22d3a8;
   --warning:#f59e0b;--danger:#ff5e7a;--info:#38bdf8;
@@ -852,7 +852,6 @@ function showPage(page){
   const sec=document.getElementById('page-'+page);const nav=document.getElementById('nav-'+page);
   if(sec)sec.classList.add('active');if(nav)nav.classList.add('active');
   const titles={dashboard:'Dashboard',asistencia:'Registrar Asistencia',historial:'Mi Historial',reunion:'Sala de Reunión',colaboradores:'Gestión de Personal',grupos:'Grupos y Reuniones',control:'Control de Asistencia',reportes:'Reportes',logs:'Logs de Acceso',perfil:'Mi Perfil',evidencias:'Evidencias Fotográficas'};
-  evidencias:'Evidencias Fotográficas',
   document.getElementById('topbarTitle').textContent=titles[page]||page;
   document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('active');
   if(page==='dashboard')cargarDashboard();
