@@ -1980,7 +1980,10 @@ async function cargarSesionesActivas(){
         <div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)">${g.sesion_activa.nombre||''}</div>
         <div style="font-size:13px;color:var(--muted);margin:4px 0">Grupo: ${g.nombre}</div>
         <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);letter-spacing:3px;margin:10px 0">${g.sesion_activa.codigo||''}</div>
-        <button onclick="abrirSala(${g.sesion_activa.id},'${g.sesion_activa.codigo}','${g.sesion_activa.nombre}','${g.sesion_activa.agora_channel}')"
+        <button onclick="showPage('reunion'); abrirSala(${g.sesion_activa.id},'${g.sesion_activa.codigo}','${String(g.sesion_activa.nombre||'').replace(/'/g,\"\\\\'\")}','${g.sesion_activa.agora_channel}', ${g.id})"
+  class="btn-primary-custom w-100" style="justify-content:center">
+  <i class="fas fa-sign-in-alt"></i> Entrar a la Sala
+</button>
           class="btn-primary-custom w-100" style="justify-content:center">
           <i class="fas fa-sign-in-alt"></i> Entrar a la Sala
         </button>
