@@ -2356,25 +2356,45 @@ async function exportarPDF(){
   showMsg('✅ PDF generado correctamente','success');
 }
 async function buscarSala(){
-  const codigo=document.getElementById('codigoReunion').value.trim().toUpperCase();
-  if(!codigo){document.getElementById('joinMsg').innerHTML='<div class="alert-warning-msg">Ingresa el código de la sala.</div>';return;}
+  const codigo = document.getElementById('codigoReunion').value.trim().toUpperCase();
+  if(!codigo){
+    document.getElementById('joinMsg').innerHTML = '<div class="alert-warning-msg">Ingresa el código de la sala.</div>';
+    return;
+  }
+
   showLoading(true);
-  const res=await api('getSesion',{codigo});
+  const res = await api('getSesion', { codigo });
   showLoading(false);
-  if(!res.ok){document.getElementById('joinMsg').innerHTML='<div class="alert-danger-msg">Sala no encontrada o inactiva.</div>';return;}
-  salaGrupoMiembros=[];
-  const grupoId=res.sesion?.grupo_id||res.sesion?.grupo?.id||null;
+
+  if(!res.ok){
+    document.getElementById('joinMsg').innerHTML = '<div class="alert-danger-msg">Sala no encontrada o inactiva.</div>';
+    return;
+  }
+
+  salaGrupoMiembros = [];
+  const grupoId = res.sesion?.grupo_id || res.sesion?.grupo?.id || null;
+
   if(grupoId){
-    const colRes=await api('getGrupos');
+    const colRes = await api('getGrupos');
     if(colRes.ok){
-      const grupo=(colRes.grupos||[]).find(g=>parseInt(g.id)===parseInt(grupoId));
-      if(grupo&&grupo.miembros)salaGrupoMiembros=grupo.miembros;
+      const grupo = (colRes.grupos || []).find(g => parseInt(g.id) === parseInt(grupoId));
+      if(grupo && grupo.miembros) salaGrupoMiembros = grupo.miembros;
     }
   }
-  abrirSala(res.sesion.id,res.sesion.codigo,res.sesion.nombre,res.sesion.agora_channel);
+
+  showPage('reunion');
+  await abrirSala(
+    res.sesion.id,
+    res.sesion.codigo,
+    res.sesion.nombre,
+    res.sesion.agora_channel,
+    grupoId
+  );
 }
 
 async function abrirSala(id,codigo,nombre,channel,gId=null){
+  showPage('reunion');
+
   if(gId && !salaGrupoMiembros.length){
     const colRes = await api('getGrupos');
     if(colRes.ok){
@@ -2382,6 +2402,15 @@ async function abrirSala(id,codigo,nombre,channel,gId=null){
       if(grupo && grupo.miembros) salaGrupoMiembros = grupo.miembros;
     }
   }
+
+  salaActiva = {id,codigo,nombre,channel};
+  document.getElementById('reunionJoinScreen').style.display='none';
+  const sala=document.getElementById('reunionSalaScreen');
+  sala.style.display='block';
+
+  // ... deja el resto de tu sala.innerHTML igual
+  await initAgora(id,channel);
+}
 
   salaActiva = { id, codigo, nombre, channel };
 
