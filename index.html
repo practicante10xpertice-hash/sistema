@@ -1588,12 +1588,6 @@ async function cerrarSalaAdmin(sesionId, nombre){
     showMsg('❌ Error al cerrar la sala: '+(res.msg||''),'danger');
   }
 }
-  const nombre=prompt('Nombre de la reunión:','Reunión '+new Date().toLocaleDateString('es-PE'));if(!nombre)return;
-
-  showLoading(true);
-  const res=await api('crearSesion',{grupo_id:gId,nombre,creado_por:SESSION.uid});
-  showLoading(false);
-  if(!res.ok){showMsg('Error al crear la sala: '+(res.msg||''),'danger');return;}
 
   // Guardar los miembros del grupo en la sala activa para mostrarlos como "pendientes"
   const colRes=await api('getGrupos');
