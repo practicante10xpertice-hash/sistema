@@ -2031,12 +2031,85 @@ async function cargarControl(){
 
 let reporteData=[];
 async function cargarReporte(){
-  showLoading(true);const res=await api('getReporte',{tipo:document.getElementById('rTipo').value,mes:document.getElementById('rMes').value,anio:document.getElementById('rAnio').value,usuario_id:document.getElementById('rUid').value});showLoading(false);if(!res.ok)return;
-  reporteData=res.asistencias||[];const total=reporteData.length;const ent=reporteData.filter(r=>r.tipo==='entrada').length;const sal=reporteData.filter(r=>r.tipo==='salida').length;const tard=reporteData.filter(r=>parseInt(r.tardanza)).length;
-  document.getElementById('reporteStats').innerHTML=`<div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-list"></i></div><div class="stat-value">${total}</div><div class="stat-label">Total Registros</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-sign-in-alt"></i></div><div class="stat-value">${ent}</div><div class="stat-label">Entradas</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-sign-out-alt"></i></div><div class="stat-value">${sal}</div><div class="stat-label">Salidas</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-clock-rotate-left"></i></div><div class="stat-value">${tard}</div><div class="stat-label">Tardanzas</div></div></div>`;
-  document.getElementById('reporteTable').innerHTML=total?`<table class="table-custom"><thead><tr><th>#</th><th>Colaborador</th><th>Fecha</th><th>Tipo</th><th>Hora</th><th>Estado</th></tr></thead><tbody>`+reporteData.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.nombre||''} ${r.apellido||''}</strong><br><small style="color:var(--muted)">${r.departamento||''}</small></td><td>${r.fecha||''}</td><td><span class="badge-custom ${r.tipo==='entrada'?'badge-green':'badge-blue'}">${r.tipo||''}</span></td><td style="font-family:var(--font-head);font-weight:700">${String(r.hora||'').slice(0,5)}</td><td>${parseInt(r.tardanza)?`<span class="badge-custom badge-orange">+${r.minutos_tardanza}min</span>`:'<span class="badge-custom badge-green">Puntual</span>'}</td></tr>`).join('')+'</tbody></table>':'<p style="color:var(--muted);padding:12px;font-size:14px">Sin registros para este período.</p>';
-}
+  showLoading(true);
+  const res = await api('getReporte', {
+    tipo: document.getElementById('rTipo').value,
+    mes: document.getElementById('rMes').value,
+    anio: document.getElementById('rAnio').value,
+    usuario_id: document.getElementById('rUid').value
+  });
+  showLoading(false);
+  if(!res.ok) return;
 
+  reporteData = res.asistencias || [];
+
+  const total = reporteData.length;
+  const ent = reporteData.filter(r => String(r.tipo || '').startsWith('entrada')).length;
+  const sal = reporteData.filter(r => String(r.tipo || '').startsWith('salida')).length;
+  const chk = reporteData.filter(r => r.tipo === 'checkin_reunion').length;
+  const tard = reporteData.filter(r => parseInt(r.tardanza)).length;
+
+  document.getElementById('reporteStats').innerHTML =
+    `<div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-list"></i></div><div class="stat-value">${total}</div><div class="stat-label">Total Registros</div></div></div>
+     <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-sign-in-alt"></i></div><div class="stat-value">${ent}</div><div class="stat-label">Entradas</div></div></div>
+     <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-sign-out-alt"></i></div><div class="stat-value">${sal}</div><div class="stat-label">Salidas</div></div></div>
+     <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-camera"></i></div><div class="stat-value">${chk}</div><div class="stat-label">Check-in Reunión</div></div></div>`;
+
+  function nombreTipo(tipo){
+    const t = String(tipo || '');
+    if(t === 'entrada_manana') return 'Entrada Mañana';
+    if(t === 'salida_manana') return 'Salida Mañana';
+    if(t === 'entrada_tarde') return 'Entrada Tarde';
+    if(t === 'salida_tarde') return 'Salida Tarde';
+    if(t === 'checkin_reunion') return 'Check-in Reunión';
+    return t;
+  }
+
+  function claseTipo(tipo){
+    const t = String(tipo || '');
+    if(t.startsWith('entrada')) return 'badge-green';
+    if(t.startsWith('salida')) return 'badge-blue';
+    if(t === 'checkin_reunion') return 'badge-orange';
+    return 'badge-blue';
+  }
+
+  function estadoTexto(r){
+    if(r.tipo === 'checkin_reunion'){
+      return '<span class="badge-custom badge-orange">Reunión</span>';
+    }
+    return parseInt(r.tardanza)
+      ? `<span class="badge-custom badge-orange">+${r.minutos_tardanza}min</span>`
+      : '<span class="badge-custom badge-green">Puntual</span>';
+  }
+
+  document.getElementById('reporteTable').innerHTML = total
+    ? `<table class="table-custom">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Colaborador</th>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Hora</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>` +
+        reporteData.map((r,i)=>`
+          <tr>
+            <td>${i+1}</td>
+            <td>
+              <strong>${r.nombre||''} ${r.apellido||''}</strong><br>
+              <small style="color:var(--muted)">${r.departamento||''}</small>
+            </td>
+            <td>${r.fecha||''}</td>
+            <td><span class="badge-custom ${claseTipo(r.tipo)}">${nombreTipo(r.tipo)}</span></td>
+            <td style="font-family:var(--font-head);font-weight:700">${String(r.hora||'').slice(0,5)}</td>
+            <td>${estadoTexto(r)}</td>
+          </tr>`).join('') +
+      `</tbody></table>`
+    : '<p style="color:var(--muted);padding:12px;font-size:14px">Sin registros para este período.</p>';
+}
 function exportarCSV(){if(!reporteData.length){showMsg('Genera un reporte primero','warning');return;}const bom='\uFEFF';const header='Nombre;Apellido;Departamento;Fecha;Tipo;Hora;Tardanza;Min.Tardanza\n';const rows=reporteData.map(r=>[r.nombre,r.apellido,r.departamento,r.fecha,r.tipo,r.hora,parseInt(r.tardanza)?'Sí':'No',r.minutos_tardanza].join(';')).join('\n');const blob=new Blob([bom+header+rows],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='reporte_'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
 
 async function cargarLogs(){
