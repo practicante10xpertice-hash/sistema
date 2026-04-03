@@ -761,7 +761,15 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
 'use strict';
 
 // ══ ESTADO GLOBAL ════════════════════════════════════════════
-let SESSION={uid:null,nombre:'',rol:'',hEntrada:'09:00',hSalida:'18:00',tolerancia:10};
+let SESSION={
+  uid:null,
+  nombre:'',
+  rol:'',
+  hEntrada:'09:00',
+  hSalida:'18:00',
+  tolerancia:10,
+  diasHorario:{}
+};
 const AGORA_APP_ID='9bb873d39ae348d6a52390e17d051939';
 const GAS_URL='https://script.google.com/macros/s/AKfycbyBbFVx5NgYnslKpu5b2jzlG0aegWjdh-jPTqciJxqG6IbqZ1kDPULndAg9qDcwTmfRrg/exec';
 const DIAS_SEMANA=[{key:'lun',label:'LUN',full:'Lunes'},{key:'mar',label:'MAR',full:'Martes'},{key:'mie',label:'MIÉ',full:'Miércoles'},{key:'jue',label:'JUE',full:'Jueves'},{key:'vie',label:'VIE',full:'Viernes'},{key:'sab',label:'SÁB',full:'Sábado'},{key:'dom',label:'DOM',full:'Domingo'}];
@@ -832,7 +840,26 @@ async function doLogin(){
   const res=await api('login',{usuario,password});
   showLoading(false);btn.disabled=false;document.getElementById('btnLoginText').textContent='Ingresar al Sistema';
   if(res.ok){
-    SESSION={uid:res.user.id,nombre:res.user.nombre,rol:res.user.rol,hEntrada:limpiarHora(res.user.hora_entrada)||'09:00',hSalida:limpiarHora(res.user.hora_salida)||'18:00',tolerancia:res.user.tolerancia_min||10};
+    let diasHorario = {};
+try{
+  diasHorario = res.user.dias_horario
+    ? (typeof res.user.dias_horario === 'string'
+        ? JSON.parse(res.user.dias_horario)
+        : res.user.dias_horario)
+    : {};
+}catch(e){
+  diasHorario = {};
+}
+
+SESSION = {
+  uid: res.user.id,
+  nombre: res.user.nombre,
+  rol: res.user.rol,
+  hEntrada: limpiarHora(res.user.hora_entrada) || '09:00',
+  hSalida: limpiarHora(res.user.hora_salida) || '18:00',
+  tolerancia: res.user.tolerancia_min || 10,
+  diasHorario: diasHorario
+};
     sessionStorage.setItem('session',JSON.stringify(SESSION));mostrarApp();
   }else{err.innerHTML='<i class="fas fa-circle-exclamation"></i> '+(res.msg||'Credenciales incorrectas');err.style.display='flex';}
 }
@@ -973,48 +1000,68 @@ async function cargarEstadoAsistencia(){
   }
 
   const hp=document.getElementById('horarioPanel');
-  hp.innerHTML=`
-    <div class="card-panel-title"><i class="fas fa-user-clock"></i> Mi Horario</div>
 
-    <div class="row g-2">
-      <div class="col-12">
-        <div style="background:rgba(34,211,168,.06);border:1px solid rgba(34,211,168,.15);border-radius:10px;padding:14px">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${TURNOS.manana.emoji} Turno Mañana</div>
-          <div class="row g-2 text-center">
-            <div class="col-6">
-              <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Entrada</div>
-              <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--success)">${TURNOS.manana.entrada}</div>
-            </div>
-            <div class="col-6">
-              <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Salida</div>
-              <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--success)">${TURNOS.manana.salida}</div>
-            </div>
+const diasMap = {
+  0:'dom', 1:'lun', 2:'mar', 3:'mie', 4:'jue', 5:'vie', 6:'sab'
+};
+const hoyKey = diasMap[new Date().getDay()];
+
+// intenta leer el horario real del colaborador si ya vino en SESSION.diasHorario
+const horarioHoy = (SESSION && SESSION.diasHorario && SESSION.diasHorario[hoyKey])
+  ? SESSION.diasHorario[hoyKey]
+  : null;
+
+// fallback a TURNOS si todavía no tienes diasHorario cargado en SESSION
+const mananaEntrada = horarioHoy?.manana?.entrada || horarioHoy?.entrada_manana || TURNOS.manana.entrada;
+const mananaSalida  = horarioHoy?.manana?.salida  || horarioHoy?.salida_manana  || TURNOS.manana.salida;
+const mananaTol     = horarioHoy?.manana?.tolerancia ?? horarioHoy?.tolerancia_manana ?? TURNOS.manana.tolerancia;
+
+const tardeEntrada  = horarioHoy?.tarde?.entrada  || horarioHoy?.entrada_tarde || TURNOS.tarde.entrada;
+const tardeSalida   = horarioHoy?.tarde?.salida   || horarioHoy?.salida_tarde  || TURNOS.tarde.salida;
+const tardeTol      = horarioHoy?.tarde?.tolerancia ?? horarioHoy?.tolerancia_tarde ?? TURNOS.tarde.tolerancia;
+
+hp.innerHTML=`
+  <div class="card-panel-title"><i class="fas fa-user-clock"></i> Mi Horario</div>
+
+  <div class="row g-2">
+    <div class="col-12">
+      <div style="background:rgba(34,211,168,.06);border:1px solid rgba(34,211,168,.15);border-radius:10px;padding:14px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${TURNOS.manana.emoji} Turno Mañana</div>
+        <div class="row g-2 text-center">
+          <div class="col-6">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Entrada</div>
+            <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--success)">${mananaEntrada}</div>
           </div>
-        </div>
-      </div>
-
-      <div class="col-12">
-        <div style="background:rgba(99,132,255,.06);border:1px solid rgba(99,132,255,.15);border-radius:10px;padding:14px">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${TURNOS.tarde.emoji} Turno Tarde</div>
-          <div class="row g-2 text-center">
-            <div class="col-6">
-              <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Entrada</div>
-              <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--accent)">${TURNOS.tarde.entrada}</div>
-            </div>
-            <div class="col-6">
-              <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Salida</div>
-              <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--accent)">${TURNOS.tarde.salida}</div>
-            </div>
+          <div class="col-6">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Salida</div>
+            <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--success)">${mananaSalida}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <p style="color:var(--muted);font-size:13px;margin-top:12px">
-      <i class="fas fa-clock" style="color:var(--warning)"></i>
-      Tolerancia mañana: <strong>${TURNOS.manana.tolerancia} min</strong> &nbsp;|&nbsp;
-      Tolerancia tarde: <strong>${TURNOS.tarde.tolerancia} min</strong>
-    </p>
+    <div class="col-12">
+      <div style="background:rgba(99,132,255,.06);border:1px solid rgba(99,132,255,.15);border-radius:10px;padding:14px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${TURNOS.tarde.emoji} Turno Tarde</div>
+        <div class="row g-2 text-center">
+          <div class="col-6">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Entrada</div>
+            <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--accent)">${tardeEntrada}</div>
+          </div>
+          <div class="col-6">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Salida</div>
+            <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--accent)">${tardeSalida}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="color:var(--muted);font-size:13px;margin-top:12px">
+    <i class="fas fa-clock" style="color:var(--warning)"></i>
+    Tolerancia mañana: <strong>${mananaTol} min</strong> &nbsp;|&nbsp;
+    Tolerancia tarde: <strong>${tardeTol} min</strong>
+  </p>
   `;
 
   if(navigator.geolocation){
