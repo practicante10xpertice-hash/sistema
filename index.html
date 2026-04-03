@@ -369,9 +369,30 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
                   </div>
                 </div>
                 <div class="row g-3">
-                  <div class="col-12"><button class="btn-asistencia btn-entrada" id="btnEntrada" onclick="registrarAsistencia('entrada')"><i class="fas fa-sign-in-alt"></i> Registrar Entrada</button></div>
-                  <div class="col-12"><button class="btn-asistencia btn-salida" id="btnSalida" onclick="registrarAsistencia('salida')" disabled><i class="fas fa-sign-out-alt"></i> Registrar Salida</button></div>
-                </div>
+  <div class="col-12">
+    <button class="btn-asistencia btn-entrada" id="btnEntradaManana" onclick="registrarAsistencia('entrada_manana')">
+      <i class="fas fa-sun"></i> Registrar Entrada Mañana
+    </button>
+  </div>
+
+  <div class="col-12">
+    <button class="btn-asistencia btn-salida" id="btnSalidaManana" onclick="registrarAsistencia('salida_manana')" disabled>
+      <i class="fas fa-sign-out-alt"></i> Registrar Salida Mañana
+    </button>
+  </div>
+
+  <div class="col-12">
+    <button class="btn-asistencia btn-entrada" id="btnEntradaTarde" onclick="registrarAsistencia('entrada_tarde')" disabled>
+      <i class="fas fa-cloud-sun"></i> Registrar Entrada Tarde
+    </button>
+  </div>
+
+  <div class="col-12">
+    <button class="btn-asistencia btn-salida" id="btnSalidaTarde" onclick="registrarAsistencia('salida_tarde')" disabled>
+      <i class="fas fa-moon"></i> Registrar Salida Tarde
+    </button>
+  </div>
+</div>
               </div>
             </div>
             <div class="col-lg-5">
@@ -898,11 +919,58 @@ function renderTabla(rows){
 let gpsLat=0,gpsLng=0,gpsText='',fotoCaptured=false,localStream=null;
 
 async function cargarEstadoAsistencia(){
-  const res=await api('getEstadoHoy',{usuario_id:SESSION.uid});if(!res.ok)return;
-  const pills=document.getElementById('estadoPills');const btnE=document.getElementById('btnEntrada');const btnS=document.getElementById('btnSalida');
-  if(res.entrada_registrada){btnE.disabled=true;btnE.innerHTML='<i class="fas fa-check"></i> Entrada registrada ('+String(res.hora_entrada||'').slice(0,5)+')';pills.children[0].className='status-pill status-ok';pills.children[0].innerHTML='<i class="fas fa-check-circle"></i> Entrada: '+String(res.hora_entrada||'').slice(0,5);}
-  if(res.salida_registrada){btnS.disabled=true;btnS.innerHTML='<i class="fas fa-check"></i> Salida registrada ('+String(res.hora_salida||'').slice(0,5)+')';pills.children[1].className='status-pill status-ok';}
-  else if(res.entrada_registrada){btnS.disabled=false;}
+  const res = await api('getEstadoHoy', { usuario_id: SESSION.uid });
+  if(!res.ok) return;
+
+  const pills = document.getElementById('estadoPills');
+  const btnEM = document.getElementById('btnEntradaManana');
+  const btnSM = document.getElementById('btnSalidaManana');
+  const btnET = document.getElementById('btnEntradaTarde');
+  const btnST = document.getElementById('btnSalidaTarde');
+
+  pills.innerHTML = `
+    <div class="status-pill ${res.entrada_manana_registrada ? 'status-ok' : 'status-pend'}">
+      <i class="fas fa-sun"></i> Entrada mañana: ${res.hora_entrada_manana || 'Pendiente'}
+    </div>
+    <div class="status-pill ${res.salida_manana_registrada ? 'status-ok' : 'status-pend'}">
+      <i class="fas fa-sign-out-alt"></i> Salida mañana: ${res.hora_salida_manana || 'Pendiente'}
+    </div>
+    <div class="status-pill ${res.entrada_tarde_registrada ? 'status-ok' : 'status-pend'}">
+      <i class="fas fa-cloud-sun"></i> Entrada tarde: ${res.hora_entrada_tarde || 'Pendiente'}
+    </div>
+    <div class="status-pill ${res.salida_tarde_registrada ? 'status-ok' : 'status-pend'}">
+      <i class="fas fa-moon"></i> Salida tarde: ${res.hora_salida_tarde || 'Pendiente'}
+    </div>
+  `;
+
+  btnEM.disabled = res.entrada_manana_registrada;
+  btnSM.disabled = !res.entrada_manana_registrada || res.salida_manana_registrada;
+  btnET.disabled = !res.salida_manana_registrada || res.entrada_tarde_registrada;
+  btnST.disabled = !res.entrada_tarde_registrada || res.salida_tarde_registrada;
+
+  if(res.entrada_manana_registrada){
+    btnEM.innerHTML = '<i class="fas fa-check"></i> Entrada mañana (' + res.hora_entrada_manana + ')';
+  } else {
+    btnEM.innerHTML = '<i class="fas fa-sun"></i> Registrar Entrada Mañana';
+  }
+
+  if(res.salida_manana_registrada){
+    btnSM.innerHTML = '<i class="fas fa-check"></i> Salida mañana (' + res.hora_salida_manana + ')';
+  } else {
+    btnSM.innerHTML = '<i class="fas fa-sign-out-alt"></i> Registrar Salida Mañana';
+  }
+
+  if(res.entrada_tarde_registrada){
+    btnET.innerHTML = '<i class="fas fa-check"></i> Entrada tarde (' + res.hora_entrada_tarde + ')';
+  } else {
+    btnET.innerHTML = '<i class="fas fa-cloud-sun"></i> Registrar Entrada Tarde';
+  }
+
+  if(res.salida_tarde_registrada){
+    btnST.innerHTML = '<i class="fas fa-check"></i> Salida tarde (' + res.hora_salida_tarde + ')';
+  } else {
+    btnST.innerHTML = '<i class="fas fa-moon"></i> Registrar Salida Tarde';
+  }
 
   const hp=document.getElementById('horarioPanel');
   hp.innerHTML=`
@@ -943,13 +1011,26 @@ async function cargarEstadoAsistencia(){
     </div>
 
     <p style="color:var(--muted);font-size:13px;margin-top:12px">
-      <i class="fas fa-clock" style="color:var(--warning)"></i> 
+      <i class="fas fa-clock" style="color:var(--warning)"></i>
       Tolerancia mañana: <strong>${TURNOS.manana.tolerancia} min</strong> &nbsp;|&nbsp;
       Tolerancia tarde: <strong>${TURNOS.tarde.tolerancia} min</strong>
     </p>
   `;
 
-  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{gpsLat=pos.coords.latitude;gpsLng=pos.coords.longitude;gpsText=`Lat: ${gpsLat.toFixed(5)}, Lng: ${gpsLng.toFixed(5)} (±${Math.round(pos.coords.accuracy)}m)`;document.getElementById('gpsInfo').innerHTML='<i class="fas fa-location-dot"></i> '+gpsText;},()=>{document.getElementById('gpsInfo').innerHTML='<i class="fas fa-location-slash"></i> Ubicación no disponible';},{enableHighAccuracy:true,timeout:10000});}
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        gpsLat=pos.coords.latitude;
+        gpsLng=pos.coords.longitude;
+        gpsText=`Lat: ${gpsLat.toFixed(5)}, Lng: ${gpsLng.toFixed(5)} (±${Math.round(pos.coords.accuracy)}m)`;
+        document.getElementById('gpsInfo').innerHTML='<i class="fas fa-location-dot"></i> '+gpsText;
+      },
+      ()=>{
+        document.getElementById('gpsInfo').innerHTML='<i class="fas fa-location-slash"></i> Ubicación no disponible';
+      },
+      {enableHighAccuracy:true,timeout:10000}
+    );
+  }
 }
 
 async function registrarAsistencia(tipo){
