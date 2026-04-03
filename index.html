@@ -827,12 +827,26 @@ async function doLogin(){
   const password=document.getElementById('loginPassword').value;
   const btn=document.getElementById('btnLogin');
   const err=document.getElementById('loginError');
-  if(!usuario||!password){err.textContent='Ingresa usuario y contraseña.';err.style.display='flex';return;}
-  btn.disabled=true;document.getElementById('btnLoginText').textContent='Verificando...';showLoading(true);
+
+  if(!usuario||!password){
+    err.textContent='Ingresa usuario y contraseña.';
+    err.style.display='flex';
+    return;
+  }
+
+  btn.disabled=true;
+  document.getElementById('btnLoginText').textContent='Verificando...';
+  showLoading(true);
+
   const res=await api('login',{usuario,password});
-  showLoading(false);btn.disabled=false;document.getElementById('btnLoginText').textContent='Ingresar al Sistema';
+
+  showLoading(false);
+  btn.disabled=false;
+  document.getElementById('btnLoginText').textContent='Ingresar al Sistema';
+
   if(res.ok){
     let diasHorario = {};
+
     try{
       diasHorario = res.user.dias_horario
         ? (typeof res.user.dias_horario === 'string'
@@ -840,8 +854,14 @@ async function doLogin(){
             : res.user.dias_horario)
         : {};
     }catch(e){
+      console.error('Error parseando dias_horario:', e);
       diasHorario = {};
     }
+
+    console.log('res.user:', res.user);
+    console.log('res.user.dias_horario:', res.user.dias_horario);
+    console.log('diasHorario parseado:', diasHorario);
+    console.log('SESSION final:', SESSION);
 
     SESSION = {
       uid: res.user.id,
@@ -853,7 +873,11 @@ async function doLogin(){
       diasHorario: diasHorario
     };
 
+    console.log('SESSION final:', SESSION);
+
     sessionStorage.setItem('session', JSON.stringify(SESSION));
+    console.log('sessionStorage guardado:', JSON.parse(sessionStorage.getItem('session')));
+
     mostrarApp();
   }else{
     err.innerHTML='<i class="fas fa-circle-exclamation"></i> '+(res.msg||'Credenciales incorrectas');
@@ -1015,19 +1039,49 @@ const diasMap = {
 };
 const hoyKey = diasMap[new Date().getDay()];
 
-// intenta leer el horario real del colaborador si ya vino en SESSION.diasHorario
 const horarioHoy = (SESSION && SESSION.diasHorario && SESSION.diasHorario[hoyKey])
   ? SESSION.diasHorario[hoyKey]
   : null;
 
-// fallback a TURNOS si todavía no tienes diasHorario cargado en SESSION
-const mananaEntrada = horarioHoy?.manana?.entrada || horarioHoy?.entrada_manana || TURNOS.manana.entrada;
-const mananaSalida  = horarioHoy?.manana?.salida  || horarioHoy?.salida_manana  || TURNOS.manana.salida;
-const mananaTol     = horarioHoy?.manana?.tolerancia ?? horarioHoy?.tolerancia_manana ?? TURNOS.manana.tolerancia;
+const mananaEntrada =
+  horarioHoy?.manana?.entrada ||
+  horarioHoy?.turno_manana?.entrada ||
+  horarioHoy?.entrada_manana ||
+  TURNOS.manana.entrada;
 
-const tardeEntrada  = horarioHoy?.tarde?.entrada  || horarioHoy?.entrada_tarde || TURNOS.tarde.entrada;
-const tardeSalida   = horarioHoy?.tarde?.salida   || horarioHoy?.salida_tarde  || TURNOS.tarde.salida;
-const tardeTol      = horarioHoy?.tarde?.tolerancia ?? horarioHoy?.tolerancia_tarde ?? TURNOS.tarde.tolerancia;
+const mananaSalida =
+  horarioHoy?.manana?.salida ||
+  horarioHoy?.turno_manana?.salida ||
+  horarioHoy?.salida_manana ||
+  TURNOS.manana.salida;
+
+const mananaTol =
+  horarioHoy?.manana?.tolerancia ??
+  horarioHoy?.turno_manana?.tolerancia ??
+  horarioHoy?.tolerancia_manana ??
+  TURNOS.manana.tolerancia;
+
+const tardeEntrada =
+  horarioHoy?.tarde?.entrada ||
+  horarioHoy?.turno_tarde?.entrada ||
+  horarioHoy?.entrada_tarde ||
+  TURNOS.tarde.entrada;
+
+const tardeSalida =
+  horarioHoy?.tarde?.salida ||
+  horarioHoy?.turno_tarde?.salida ||
+  horarioHoy?.salida_tarde ||
+  TURNOS.tarde.salida;
+
+const tardeTol =
+  horarioHoy?.tarde?.tolerancia ??
+  horarioHoy?.turno_tarde?.tolerancia ??
+  horarioHoy?.tolerancia_tarde ??
+  TURNOS.tarde.tolerancia;
+
+console.log('hoyKey:', hoyKey);
+console.log('SESSION.diasHorario:', SESSION.diasHorario);
+console.log('horarioHoy:', horarioHoy);
 
 hp.innerHTML=`
   <div class="card-panel-title"><i class="fas fa-user-clock"></i> Mi Horario</div>
