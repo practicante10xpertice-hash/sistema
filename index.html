@@ -1287,53 +1287,58 @@ function capturePhoto(){
 function resetPhoto(){document.getElementById('videoPreview').style.display='block';document.getElementById('photoCanvas').style.display='none';document.getElementById('btnResetPhoto').style.display='none';fotoCaptured=false;toggleCameraAsist();}
 
 async function cargarHistorial(){
-  const mes=document.getElementById('filtroMes').value;
-  const anio=document.getElementById('filtroAnio').value;
+  const mes = document.getElementById('filtroMes').value;
+  const anio = document.getElementById('filtroAnio').value;
 
   showLoading(true);
-  const res=await api('getAsistenciasMes',{usuario_id:SESSION.uid,mes,anio});
+  const res = await api('getAsistenciasMes', { usuario_id: SESSION.uid, mes, anio });
   showLoading(false);
-  if(!res.ok)return;
 
-  const meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const rows=res.asistencias||[];
+  if(!res || !res.ok){
+    document.getElementById('historialTable').innerHTML =
+      '<p style="color:var(--muted);padding:16px;font-size:14px">No se pudo cargar el historial.</p>';
+    return;
+  }
 
-  const pf={};
-  rows.forEach(r=>{
-    if(!pf[r.fecha]) pf[r.fecha]=[];
+  const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const rows = res.asistencias || [];
+
+  const pf = {};
+  rows.forEach(r => {
+    if(!pf[r.fecha]) pf[r.fecha] = [];
     pf[r.fecha].push(r);
   });
 
-  let diasPresentes=0;
-  let tardanzas=0;
-  let totalMin=0;
+  let diasPresentes = 0;
+  let tardanzas = 0;
+  let totalMin = 0;
 
-  Object.keys(pf).forEach(f=>{
-    const regs=pf[f];
+  function calcMin(e, s){
+    if(!e || !s) return 0;
+    const he = String(e.hora).slice(0,5).split(':').map(Number);
+    const hs = String(s.hora).slice(0,5).split(':').map(Number);
+    return (hs[0]*60 + hs[1]) - (he[0]*60 + he[1]);
+  }
 
-    const em=regs.find(r=>r.tipo==='entrada_manana');
-    const sm=regs.find(r=>r.tipo==='salida_manana');
-    const et=regs.find(r=>r.tipo==='entrada_tarde');
-    const st=regs.find(r=>r.tipo==='salida_tarde');
-    const cr=regs.filter(r=>r.tipo==='checkin_reunion');
+  Object.keys(pf).forEach(f => {
+    const regs = pf[f];
 
-    if(em || et) diasPresentes++;
+    const em = regs.find(r => r.tipo === 'entrada_manana');
+    const sm = regs.find(r => r.tipo === 'salida_manana');
+    const et = regs.find(r => r.tipo === 'entrada_tarde');
+    const st = regs.find(r => r.tipo === 'salida_tarde');
+    const cr = regs.filter(r => r.tipo === 'checkin_reunion');
 
-    if(em && parseInt(em.tardanza||0)===1) tardanzas++;
-    if(et && parseInt(et.tardanza||0)===1) tardanzas++;
+    if(em || et || cr.length) diasPresentes++;
 
-    function calcMin(e,s){
-      if(!e || !s) return 0;
-      const he=String(e.hora).slice(0,5).split(':').map(Number);
-      const hs=String(s.hora).slice(0,5).split(':').map(Number);
-      return (hs[0]*60+hs[1])-(he[0]*60+he[1]);
-    }
+    if(em && parseInt(em.tardanza || 0) === 1) tardanzas++;
+    if(et && parseInt(et.tardanza || 0) === 1) tardanzas++;
 
-    totalMin += calcMin(em,sm);
-    totalMin += calcMin(et,st);
+    totalMin += calcMin(em, sm);
+    totalMin += calcMin(et, st);
   });
 
-  document.getElementById('historialStats').innerHTML=`
+  document.getElementById('historialStats').innerHTML = `
     <div class="col-6 col-lg-3">
       <div class="stat-card">
         <div class="stat-icon icon-green"><i class="fas fa-calendar-check"></i></div>
@@ -1365,11 +1370,12 @@ async function cargarHistorial(){
   `;
 
   if(!rows.length){
-    document.getElementById('historialTable').innerHTML='<p style="color:var(--muted);padding:16px;font-size:14px">Sin registros para este período.</p>';
+    document.getElementById('historialTable').innerHTML =
+      '<p style="color:var(--muted);padding:16px;font-size:14px">Sin registros para este período.</p>';
     return;
   }
 
-  let html=`
+  let html = `
     <table class="table-custom">
       <thead>
         <tr>
@@ -1386,31 +1392,25 @@ async function cargarHistorial(){
       <tbody>
   `;
 
-  Object.keys(pf).sort().reverse().forEach(f=>{
-    const regs=pf[f];
+  Object.keys(pf).sort().reverse().forEach(f => {
+    const regs = pf[f];
 
-    const em=regs.find(r=>r.tipo==='entrada_manana');
-    const sm=regs.find(r=>r.tipo==='salida_manana');
-    const et=regs.find(r=>r.tipo==='entrada_tarde');
-    const st=regs.find(r=>r.tipo==='salida_tarde');
+    const em = regs.find(r => r.tipo === 'entrada_manana');
+    const sm = regs.find(r => r.tipo === 'salida_manana');
+    const et = regs.find(r => r.tipo === 'entrada_tarde');
+    const st = regs.find(r => r.tipo === 'salida_tarde');
+    const cr = regs.filter(r => r.tipo === 'checkin_reunion');
 
-    function calcMin(e,s){
-      if(!e || !s) return 0;
-      const he=String(e.hora).slice(0,5).split(':').map(Number);
-      const hs=String(s.hora).slice(0,5).split(':').map(Number);
-      return (hs[0]*60+hs[1])-(he[0]*60+he[1]);
-    }
+    const minTot = calcMin(em, sm) + calcMin(et, st);
+    const horasTxt = minTot > 0 ? `${Math.floor(minTot/60)}h ${minTot%60}m` : '—';
 
-    const minTot = calcMin(em,sm) + calcMin(et,st);
-    const horasTxt = minTot>0 ? `${Math.floor(minTot/60)}h ${minTot%60}m` : '—';
-
-    let estado='—';
-    if((em && parseInt(em.tardanza||0)===1) || (et && parseInt(et.tardanza||0)===1)){
-      const t1 = em && parseInt(em.tardanza||0)===1 ? parseInt(em.minutos_tardanza||0) : 0;
-      const t2 = et && parseInt(et.tardanza||0)===1 ? parseInt(et.minutos_tardanza||0) : 0;
+    let estado = '—';
+    if((em && parseInt(em.tardanza || 0) === 1) || (et && parseInt(et.tardanza || 0) === 1)){
+      const t1 = em && parseInt(em.tardanza || 0) === 1 ? parseInt(em.minutos_tardanza || 0) : 0;
+      const t2 = et && parseInt(et.tardanza || 0) === 1 ? parseInt(et.minutos_tardanza || 0) : 0;
       estado = `<span class="badge-custom badge-orange">+${t1+t2}min tarde</span>`;
-    }else if(em || et){
-      estado = '<span class="badge-custom badge-green">✓ A tiempo</span>';
+    }else if(em || et || cr.length){
+      estado = '<span class="badge-custom badge-green">✓ Registrado</span>';
     }else{
       estado = '<span class="badge-custom badge-red">Falta</span>';
     }
@@ -1422,7 +1422,7 @@ async function cargarHistorial(){
         <td>${sm ? String(sm.hora).slice(0,5) : '—'}</td>
         <td>${et ? String(et.hora).slice(0,5) : '—'}</td>
         <td>${st ? String(st.hora).slice(0,5) : '—'}</td>
-        <td>${cr && cr.length ? cr.map(x => String(x.hora).slice(0,5)).join(', ') : '—'}</td>
+        <td>${cr.length ? cr.map(x => String(x.hora).slice(0,5)).join(', ') : '—'}</td>
         <td>${horasTxt}</td>
         <td>${estado}</td>
       </tr>
@@ -1430,7 +1430,7 @@ async function cargarHistorial(){
   });
 
   html += '</tbody></table>';
-  document.getElementById('historialTable').innerHTML=html;
+  document.getElementById('historialTable').innerHTML = html;
 }
 
 async function cambiarPassword(){
