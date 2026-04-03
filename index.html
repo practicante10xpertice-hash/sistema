@@ -1940,13 +1940,10 @@ async function quitarMiembro(gId,uId){const res=await api('quitarMiembro',{grupo
 async function iniciarReunion(gId, gNombre){
   const nombre=prompt('Nombre de la reunión:','Reunión '+new Date().toLocaleDateString('es-PE'));
   if(!nombre)return;
-
   showLoading(true);
   const res=await api('crearSesion',{grupo_id:gId,nombre,creado_por:SESSION.uid});
   showLoading(false);
-
   if(!res.ok){showMsg('Error al crear la sala: '+(res.msg||''),'danger');return;}
-
   // Cargar miembros del grupo
   salaGrupoMiembros=[];
   const colRes=await api('getGrupos');
@@ -1954,15 +1951,14 @@ async function iniciarReunion(gId, gNombre){
     const grupo=(colRes.grupos||[]).find(g=>parseInt(g.id)===parseInt(gId));
     if(grupo&&grupo.miembros)salaGrupoMiembros=grupo.miembros;
   }
-
   showMsg(`✅ Sala creada — Código: <strong style="letter-spacing:2px;color:var(--accent)">${res.codigo}</strong>`,'success');
   cargarGrupos();
   cargarSesionesActivas();
-
- if(confirm(`Sala creada con código: ${res.codigo}\n¿Entrar ahora?`)){
-  showPage('reunion');
-  await abrirSala(res.id,res.codigo,nombre,res.agora_channel,gId);
-}
+  if(confirm(`Sala creada con código: ${res.codigo}\n¿Entrar ahora?`)){
+    showPage('reunion');
+    await abrirSala(res.id,res.codigo,nombre,res.agora_channel,gId);
+  }
+} // ← Esta llave faltaba
 
 async function cargarSesionesActivas(){
   const panel = document.getElementById('sesionesActivasPanel');
