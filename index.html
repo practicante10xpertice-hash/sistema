@@ -1298,7 +1298,6 @@ async function cargarHistorial(){
   const meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const rows=res.asistencias||[];
 
-  // agrupar por fecha
   const pf={};
   rows.forEach(r=>{
     if(!pf[r.fecha]) pf[r.fecha]=[];
