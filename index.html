@@ -304,6 +304,7 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
           <button class="nav-item" onclick="showPage('control')" id="nav-control"><i class="fas fa-list-check"></i> Control Asistencia</button>
           <button class="nav-item" onclick="showPage('reportes')" id="nav-reportes"><i class="fas fa-file-chart-column"></i> Reportes</button>
           <button class="nav-item" onclick="showPage('logs')" id="nav-logs"><i class="fas fa-shield-halved"></i> Logs de Acceso</button>
+          <button class="nav-item" onclick="showPage('evidencias')" id="nav-evidencias"><i class="fas fa-images"></i> Evidencias Foto</button>
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -617,6 +618,26 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
             <div class="table-wrapper" id="reporteTable"><p style="color:var(--muted);font-size:14px">Genera un reporte para ver los datos.</p></div>
           </div>
         </div>
+        <!-- EVIDENCIAS -->
+<div class="page-section" id="page-evidencias">
+  <div class="card-panel mb-4">
+    <div class="card-panel-title"><i class="fas fa-images"></i> Filtros</div>
+    <div class="d-flex gap-3 flex-wrap align-items-end">
+      <div>
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">Fecha</label>
+        <input type="date" id="evFecha" class="form-control-custom" style="width:auto">
+      </div>
+      <div>
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">Colaborador</label>
+        <select id="evUid" class="form-control-custom" style="width:auto;min-width:200px">
+          <option value="">— Todos —</option>
+        </select>
+      </div>
+      <button class="btn-primary-custom" onclick="cargarEvidencias()"><i class="fas fa-search"></i> Buscar</button>
+    </div>
+  </div>
+  <div id="evidenciasGrid"></div>
+</div>
 
         <!-- LOGS -->
         <div class="page-section" id="page-logs">
@@ -830,7 +851,8 @@ function showPage(page){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const sec=document.getElementById('page-'+page);const nav=document.getElementById('nav-'+page);
   if(sec)sec.classList.add('active');if(nav)nav.classList.add('active');
-  const titles={dashboard:'Dashboard',asistencia:'Registrar Asistencia',historial:'Mi Historial',reunion:'Sala de Reunión',colaboradores:'Gestión de Personal',grupos:'Grupos y Reuniones',control:'Control de Asistencia',reportes:'Reportes',logs:'Logs de Acceso',perfil:'Mi Perfil'};
+  const titles={dashboard:'Dashboard',asistencia:'Registrar Asistencia',historial:'Mi Historial',reunion:'Sala de Reunión',colaboradores:'Gestión de Personal',grupos:'Grupos y Reuniones',control:'Control de Asistencia',reportes:'Reportes',logs:'Logs de Acceso',perfil:'Mi Perfil' };
+  evidencias:'Evidencias Fotográficas',
   document.getElementById('topbarTitle').textContent=titles[page]||page;
   document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('active');
   if(page==='dashboard')cargarDashboard();
@@ -841,6 +863,7 @@ function showPage(page){
   if(page==='control')cargarSelectColabs('ctrlUid');
   if(page==='reportes')cargarSelectColabs('rUid');
   if(page==='logs')cargarLogs();
+  if(page==='evidencias'){cargarSelectColabs('evUid');cargarEvidencias();}
 }
 
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('active');}
@@ -895,7 +918,20 @@ async function cargarEstadoAsistencia(){
 async function registrarAsistencia(tipo){
   if(!SESSION||!SESSION.uid){showMsg('Sesión no válida','danger');return;}
   showLoading(true);
+  // Capturar foto si está habilitada
+  let fotoBase64='';
+  if(document.getElementById('enableCamera')?.checked){
+    const canvas=document.getElementById('photoCanvas');
+    if(canvas&&canvas.width>0)fotoBase64=canvas.toDataURL('image/jpeg',0.7);
+  }
   const res=await api('registrarAsistencia',{usuario_id:SESSION.uid,tipo,latitud:gpsLat||0,longitud:gpsLng||0,ubicacion_texto:gpsText||'',foto_path:''});
+  // Guardar foto en Drive si hay
+  if(res&&res.ok&&fotoBase64){
+    const ahora=new Date();
+    const fechaStr=ahora.toISOString().slice(0,10);
+    const horaStr=ahora.toTimeString().slice(0,8).replace(/:/g,'');
+    api('guardarFotoEvidencia',{usuario_id:SESSION.uid,foto_base64:fotoBase64,tipo,fecha:fechaStr,hora:horaStr});
+  }
   showLoading(false);
   if(res&&res.ok){
     showMsg(res.msg||'Registrado correctamente','success');
@@ -1818,6 +1854,35 @@ async function cerrarSalaDirecta(id){
     showMsg('❌ Error al cerrar la sala: '+(res.msg||''),'danger');
   }
 }
+async function cargarEvidencias(){
+  const fecha=document.getElementById('evFecha')?.value||'';
+  const uid=document.getElementById('evUid')?.value||'';
+  showLoading(true);
+  const res=await api('getEvidencias',{usuario_id:uid,fecha});
+  showLoading(false);
+  const cont=document.getElementById('evidenciasGrid');if(!cont)return;
+  if(!res.ok||!res.evidencias?.length){
+    cont.innerHTML='<div class="card-panel text-center py-5"><i class="fas fa-images" style="font-size:48px;color:var(--muted);display:block;margin-bottom:16px"></i><p style="color:var(--muted)">No hay evidencias fotográficas para los filtros seleccionados.</p></div>';
+    return;
+  }
+  cont.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">`+
+  res.evidencias.map(e=>`
+    <div class="card-panel" style="padding:16px">
+      <img src="${e.foto_path}" style="width:100%;border-radius:10px;margin-bottom:12px;aspect-ratio:16/9;object-fit:cover;background:#000"
+        onerror="this.style.display='none'">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${e.nombre||''} ${e.apellido||''}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">
+        <span class="badge-custom ${e.tipo==='entrada'?'badge-green':'badge-blue'}">${e.tipo||''}</span>
+        &nbsp; ${e.fecha||''} &nbsp; <strong style="color:var(--text)">${e.hora||''}</strong>
+      </div>
+      ${parseInt(e.tardanza)?`<div style="margin-top:6px"><span class="badge-custom badge-orange">+${e.minutos_tardanza}min tardanza</span></div>`:''}
+      <a href="${e.foto_path}" target="_blank" class="btn-outline-custom" style="margin-top:10px;width:100%;justify-content:center;font-size:13px">
+        <i class="fas fa-external-link-alt"></i> Ver en Drive
+      </a>
+    </div>`).join('')+`</div>`;
+}
+
+window.addEventListener('beforeunload',()=>{
 
 window.addEventListener('beforeunload',()=>{
   if(!salaActiva)return;
