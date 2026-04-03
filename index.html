@@ -911,12 +911,21 @@ async function cargarEstadoAsistencia(){
 async function registrarAsistencia(tipo){
   if(!SESSION||!SESSION.uid){showMsg('Sesión no válida','danger');return;}
   
-  // ✅ Capturar foto en base64 ANTES de llamar a la API
   let fotoBase64 = '';
   if(fotoCaptured){
     const canvas = document.getElementById('photoCanvas');
     if(canvas && canvas.width > 0){
-      try{ fotoBase64 = canvas.toDataURL('image/jpeg', 0.7); }catch(e){}
+      try{
+        // ✅ Calidad 0.4 = ~15-30KB, suficiente para evidencia
+        fotoBase64 = canvas.toDataURL('image/jpeg', 0.4);
+        // ✅ Verificar tamaño — si supera 40KB, reducir más
+        if(fotoBase64.length > 55000){
+          fotoBase64 = canvas.toDataURL('image/jpeg', 0.2);
+        }
+        console.log('Foto size:', Math.round(fotoBase64.length/1024)+'KB');
+      }catch(e){
+        console.error('Error capturando foto:', e);
+      }
     }
   }
   
@@ -927,20 +936,8 @@ async function registrarAsistencia(tipo){
     latitud: gpsLat||0,
     longitud: gpsLng||0,
     ubicacion_texto: gpsText||'',
-    foto_path: ''
+    foto_base64: fotoBase64
   });
-  
-  // Guardar foto por separado después del registro
-  if(res && res.ok && fotoBase64){
-    const ahora = new Date();
-    api('guardarFotoEvidencia',{
-      usuario_id: SESSION.uid,
-      foto_base64: fotoBase64,
-      tipo,
-      fecha: ahora.toISOString().slice(0,10),
-      hora: ahora.toTimeString().slice(0,8)
-    });
-  }
   showLoading(false);
   
   if(res && res.ok){
@@ -1006,7 +1003,22 @@ function entrarDesdeNotificacion(){
 }
 
 async function toggleCameraAsist(){const enabled=document.getElementById('enableCamera').checked;const sec=document.getElementById('cameraSection');if(enabled){sec.style.display='block';try{localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});document.getElementById('videoPreview').srcObject=localStream;}catch(e){alert('No se pudo acceder a la cámara: '+e.message);document.getElementById('enableCamera').checked=false;sec.style.display='none';}}else{sec.style.display='none';if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}}}
-function capturePhoto(){const v=document.getElementById('videoPreview');const c=document.getElementById('photoCanvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);v.style.display='none';c.style.display='block';document.getElementById('btnResetPhoto').style.display='inline-flex';fotoCaptured=true;if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}}
+function capturePhoto(){
+  const v=document.getElementById('videoPreview');
+  const c=document.getElementById('photoCanvas');
+  // ✅ Reducir resolución máxima a 320x240
+  const maxW=320, maxH=240;
+  let w=v.videoWidth||320, h=v.videoHeight||240;
+  if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+  if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
+  c.width=w; c.height=h;
+  c.getContext('2d').drawImage(v,0,0,w,h);
+  v.style.display='none';
+  c.style.display='block';
+  document.getElementById('btnResetPhoto').style.display='inline-flex';
+  fotoCaptured=true;
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+}
 function resetPhoto(){document.getElementById('videoPreview').style.display='block';document.getElementById('photoCanvas').style.display='none';document.getElementById('btnResetPhoto').style.display='none';fotoCaptured=false;toggleCameraAsist();}
 
 async function cargarHistorial(){
