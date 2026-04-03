@@ -772,6 +772,16 @@ const TURNOS = {
 };
 let turnosSeleccionados = new Set();
 
+// ══ VARIABLES GLOBALES DE SALA Y AGORA ═══════════════════════
+let salaActiva = null;
+let salaGrupoMiembros = [];
+let agoraClient = null;
+let localTracks = { audio: null, video: null };
+let micOn = true;
+let camOn = true;
+let checkinSec = 3600;
+let checkinTotal = 3600;
+
 // ══ API ═══════════════════════════════════════════════════════
 async function api(accion,data={}){
   try{
