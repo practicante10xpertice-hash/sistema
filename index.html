@@ -2405,20 +2405,10 @@ async function abrirSala(id,codigo,nombre,channel,gId=null){
 
   salaActiva = {id,codigo,nombre,channel};
   document.getElementById('reunionJoinScreen').style.display='none';
-  const sala=document.getElementById('reunionSalaScreen');
+  const sala = document.getElementById('reunionSalaScreen');
   sala.style.display='block';
 
-  // ... deja el resto de tu sala.innerHTML igual
-  await initAgora(id,channel);
-}
-
-  salaActiva = { id, codigo, nombre, channel };
-
-  document.getElementById('reunionJoinScreen').style.display = 'none';
-  const sala = document.getElementById('reunionSalaScreen');
-  sala.style.display = 'block';
-
- sala.innerHTML = `
+  sala.innerHTML = `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 22px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
       <div>
         <div style="font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--text)">
