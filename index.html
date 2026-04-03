@@ -2392,6 +2392,10 @@ async function buscarSala(){
 async function abrirSala(id,codigo,nombre,channel,gId=null){
   showPage('reunion');
 
+  // Ocultar join screen DESPUÉS de showPage (que lo resetea)
+  document.getElementById('reunionJoinScreen').style.display='none';
+  document.getElementById('reunionSalaScreen').style.display='block';
+
   if(gId && !salaGrupoMiembros.length){
     const colRes = await api('getGrupos');
     if(colRes.ok){
@@ -2401,9 +2405,7 @@ async function abrirSala(id,codigo,nombre,channel,gId=null){
   }
 
   salaActiva = {id,codigo,nombre,channel};
-  document.getElementById('reunionJoinScreen').style.display='none';
   const sala = document.getElementById('reunionSalaScreen');
-  sala.style.display='block';
 
   sala.innerHTML = `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 22px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
