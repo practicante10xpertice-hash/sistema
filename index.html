@@ -2191,7 +2191,7 @@ async function abrirSala(id,codigo,nombre,channel,gId=null){
   const sala = document.getElementById('reunionSalaScreen');
   sala.style.display = 'block';
 
-  sala.innerHTML = `
+ sala.innerHTML = `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 22px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
       <div>
         <div style="font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--text)">
@@ -2340,6 +2340,11 @@ async function checkinManualReunion(){
         msgFinal = `Check-in registrado como ${tipoAsistencia.replaceAll('_',' ')}`;
         await cargarEstadoAsistencia();
         cargarDashboard();
+
+        // agregado para refrescar historial y reportes
+        if(typeof cargarHistorial === 'function') await cargarHistorial();
+        if(typeof cargarReporte === 'function') await cargarReporte();
+        if(typeof cargarAsistencias === 'function') await cargarAsistencias();
       }else if(res && res.msg){
         msgFinal = `Check-in de reunión registrado, pero asistencia no: ${res.msg}`;
       }
