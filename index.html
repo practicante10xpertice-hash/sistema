@@ -2152,14 +2152,25 @@ async function cargarEvidencias(){
 async function exportarPDF(){
   if(!reporteData.length){showMsg('Genera un reporte primero','warning');return;}
   showLoading(true);
+
   const porUsuario={};
   reporteData.forEach(r=>{
     const uid=String(r.usuario_id||r.id||'');
     const nombre=`${r.nombre||''} ${r.apellido||''}`.trim();
-    if(!porUsuario[uid]){porUsuario[uid]={nombre,departamento:r.departamento||'',cargo:r.cargo||'',uid,registros:[]};}
+    if(!porUsuario[uid]){
+      porUsuario[uid]={
+        nombre,
+        departamento:r.departamento||'',
+        cargo:r.cargo||'',
+        uid,
+        registros:[]
+      };
+    }
     porUsuario[uid].registros.push(r);
   });
-  const mes=document.getElementById('rMes')?.value||'';const anio=document.getElementById('rAnio')?.value||'';
+
+  const mes=document.getElementById('rMes')?.value||'';
+  const anio=document.getElementById('rAnio')?.value||'';
   const meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const mesNombre=meses[parseInt(mes)]||'';
   const diasEnMes=mes&&anio?new Date(anio,mes,0).getDate():28;
@@ -2167,72 +2178,183 @@ async function exportarPDF(){
   const hasta=mes&&anio?`${anio}-${String(mes).padStart(2,'0')}-${diasEnMes}`:'';
   const periodoLabel=desde&&hasta?`${desde.split('-').reverse().join('/')} al ${hasta.split('-').reverse().join('/')}`:'Período seleccionado';
   const ahora=new Date().toLocaleString('es-PE');
-  const{jsPDF}=window.jspdf;
+
+  const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const usuarios=Object.values(porUsuario);
-  const COLORES={azulOscuro:[10,25,60],azulMedio:[30,60,120],azulClaro:[70,110,200],grisClaro:[240,242,248],grisMedio:[200,210,225],blanco:[255,255,255],verde:[34,150,90],rojo:[200,50,60],naranja:[220,140,30],texto:[30,35,50],textoMuted:[100,110,130]};
+
+  const COLORES={
+    azulOscuro:[10,25,60],
+    azulMedio:[30,60,120],
+    azulClaro:[70,110,200],
+    grisClaro:[240,242,248],
+    grisMedio:[200,210,225],
+    blanco:[255,255,255],
+    verde:[34,150,90],
+    rojo:[200,50,60],
+    naranja:[220,140,30],
+    texto:[30,35,50],
+    textoMuted:[100,110,130]
+  };
+
   usuarios.forEach((usuario,idx)=>{
-    if(idx>0)doc.addPage();
+    if(idx>0) doc.addPage();
+
     const W=doc.internal.pageSize.getWidth();
-    doc.setFillColor(...COLORES.azulOscuro);doc.rect(0,0,W,28,'F');
-    doc.setFillColor(...COLORES.azulClaro);doc.rect(0,24,W,3,'F');
-    doc.setTextColor(...COLORES.blanco);doc.setFont('helvetica','bold');doc.setFontSize(16);
+
+    doc.setFillColor(...COLORES.azulOscuro); doc.rect(0,0,W,28,'F');
+    doc.setFillColor(...COLORES.azulClaro); doc.rect(0,24,W,3,'F');
+    doc.setTextColor(...COLORES.blanco); doc.setFont('helvetica','bold'); doc.setFontSize(16);
     doc.text('REPORTE DE ASISTENCIA — FINACORP',W/2,10,{align:'center'});
-    doc.setFontSize(8);doc.setFont('helvetica','normal');
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
     doc.text(`Período: ${periodoLabel}`,W/2,17,{align:'center'});
     doc.text(`Generado: ${ahora}`,W/2,22,{align:'center'});
+
     let y=34;
-    doc.setFillColor(...COLORES.grisClaro);doc.roundedRect(8,y,W-16,26,2,2,'F');
-    doc.setDrawColor(...COLORES.azulClaro);doc.setLineWidth(0.5);doc.roundedRect(8,y,W-16,26,2,2,'S');
-    doc.setFillColor(...COLORES.azulClaro);doc.rect(8,y,3,26,'F');
-    doc.setTextColor(...COLORES.azulOscuro);doc.setFont('helvetica','bold');doc.setFontSize(13);
+
+    doc.setFillColor(...COLORES.grisClaro); doc.roundedRect(8,y,W-16,26,2,2,'F');
+    doc.setDrawColor(...COLORES.azulClaro); doc.setLineWidth(0.5); doc.roundedRect(8,y,W-16,26,2,2,'S');
+    doc.setFillColor(...COLORES.azulClaro); doc.rect(8,y,3,26,'F');
+    doc.setTextColor(...COLORES.azulOscuro); doc.setFont('helvetica','bold'); doc.setFontSize(13);
     doc.text(usuario.nombre.toUpperCase(),16,y+8);
-    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...COLORES.textoMuted);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...COLORES.textoMuted);
     doc.text(`ID: ${usuario.uid}`,16,y+14);
     doc.text(`Área: ${usuario.departamento.toUpperCase()}`,16,y+19);
     doc.text(`Cargo: ${usuario.cargo}`,16,y+24);
+
     y+=32;
+
     const total=usuario.registros.length;
-    const puntuales=usuario.registros.filter(r=>!parseInt(r.tardanza)).length;
+    const puntuales=usuario.registros.filter(r=>!parseInt(r.tardanza) && r.tipo!=='checkin_reunion').length;
     const tardanzas=usuario.registros.filter(r=>parseInt(r.tardanza)).length;
-    const stats=[{label:'Total',valor:total,color:COLORES.azulMedio},{label:'Puntuales',valor:puntuales,color:COLORES.verde},{label:'Tardanzas',valor:tardanzas,color:COLORES.rojo}];
+    const checkins=usuario.registros.filter(r=>r.tipo==='checkin_reunion').length;
+
+    const stats=[
+      {label:'Total',valor:total,color:COLORES.azulMedio},
+      {label:'Puntuales',valor:puntuales,color:COLORES.verde},
+      {label:'Tardanzas',valor:tardanzas,color:COLORES.rojo},
+      {label:'Check-in',valor:checkins,color:COLORES.naranja}
+    ];
+
     const cardW=(W-20)/stats.length;
     stats.forEach((s,i)=>{
-      const cx=10+i*cardW;doc.setFillColor(...s.color);doc.roundedRect(cx,y,cardW-4,16,2,2,'F');
-      doc.setTextColor(...COLORES.blanco);doc.setFont('helvetica','bold');doc.setFontSize(16);
+      const cx=10+i*cardW;
+      doc.setFillColor(...s.color); doc.roundedRect(cx,y,cardW-4,16,2,2,'F');
+      doc.setTextColor(...COLORES.blanco); doc.setFont('helvetica','bold'); doc.setFontSize(16);
       doc.text(String(s.valor),cx+(cardW-4)/2,y+9,{align:'center'});
-      doc.setFontSize(7);doc.setFont('helvetica','normal');
+      doc.setFontSize(7); doc.setFont('helvetica','normal');
       doc.text(s.label.toUpperCase(),cx+(cardW-4)/2,y+14,{align:'center'});
     });
+
     y+=22;
+
     const porFecha={};
-    usuario.registros.forEach(r=>{const f=r.fecha||'';if(!porFecha[f])porFecha[f]=[];porFecha[f].push(r);});
-    const filas=[];let num=1;
+    usuario.registros.forEach(r=>{
+      const f=r.fecha||'';
+      if(!porFecha[f]) porFecha[f]=[];
+      porFecha[f].push(r);
+    });
+
+    const filas=[];
+    let num=1;
+
     Object.keys(porFecha).sort().forEach(fecha=>{
       const regs=porFecha[fecha];
-      const entrada=regs.find(r=>r.tipo==='entrada');const salida=regs.find(r=>r.tipo==='salida');
-      const partes=fecha.split('-');const fechaFmt=partes.length===3?`${partes[2]}/${partes[1]}/${partes[0]}`:fecha;
-      const horaE=entrada?String(entrada.hora||'').slice(0,5):'—';
-      const tardE=entrada&&parseInt(entrada.tardanza)?`Tardanza +${entrada.minutos_tardanza} min`:(entrada?'Puntual':'—');
-      const horaS=salida?String(salida.hora||'').slice(0,5):'—';
-      const tardS=salida?'Puntual':'—';
-      filas.push([num++,fechaFmt,horaE,tardE,horaS,tardS]);
+
+      const em=regs.find(r=>r.tipo==='entrada_manana');
+      const sm=regs.find(r=>r.tipo==='salida_manana');
+      const et=regs.find(r=>r.tipo==='entrada_tarde');
+      const st=regs.find(r=>r.tipo==='salida_tarde');
+      const cr=regs.filter(r=>r.tipo==='checkin_reunion');
+
+      const partes=fecha.split('-');
+      const fechaFmt=partes.length===3?`${partes[2]}/${partes[1]}/${partes[0]}`:fecha;
+
+      const horaEM=em?String(em.hora||'').slice(0,5):'—';
+      const estadoEM=em ? (parseInt(em.tardanza)?`Tardanza +${em.minutos_tardanza} min`:'Puntual') : '—';
+
+      const horaSM=sm?String(sm.hora||'').slice(0,5):'—';
+
+      const horaET=et?String(et.hora||'').slice(0,5):'—';
+      const estadoET=et ? (parseInt(et.tardanza)?`Tardanza +${et.minutos_tardanza} min`:'Puntual') : '—';
+
+      const horaST=st?String(st.hora||'').slice(0,5):'—';
+      const horaCR=cr.length ? cr.map(c=>String(c.hora||'').slice(0,5)).join(', ') : '—';
+
+      filas.push([num++,fechaFmt,horaEM,estadoEM,horaSM,horaET,estadoET,horaST,horaCR]);
     });
-    doc.autoTable({startY:y,head:[['#','Fecha','Entrada','Puntualidad','Salida','Puntualidad']],body:filas,margin:{left:8,right:8},tableWidth:W-16,styles:{fontSize:8,cellPadding:3,textColor:COLORES.texto,lineColor:COLORES.grisMedio,lineWidth:0.2},headStyles:{fillColor:COLORES.azulOscuro,textColor:COLORES.blanco,fontStyle:'bold',fontSize:8,halign:'center'},alternateRowStyles:{fillColor:COLORES.grisClaro},columnStyles:{0:{halign:'center',cellWidth:10},1:{halign:'center',cellWidth:30},2:{halign:'center',cellWidth:25},3:{halign:'center'},4:{halign:'center',cellWidth:25},5:{halign:'center'}},didParseCell:function(data){if(data.section==='body'&&(data.column.index===3||data.column.index===5)){const txt=String(data.cell.raw||'');if(txt.includes('Tardanza')){data.cell.styles.textColor=COLORES.rojo;data.cell.styles.fontStyle='bold';}else if(txt==='Puntual'){data.cell.styles.textColor=COLORES.verde;}}},foot:[['',`Total: ${total}`,`Puntuales: ${puntuales}`,'',`Tardanzas: ${tardanzas}`,'']],footStyles:{fillColor:COLORES.azulMedio,textColor:COLORES.blanco,fontStyle:'bold',fontSize:8,halign:'center'}});
+
+    doc.autoTable({
+      startY:y,
+      head:[['#','Fecha','Ent. Mañana','Estado M','Sal. Mañana','Ent. Tarde','Estado T','Sal. Tarde','Check-in Reunión']],
+      body:filas,
+      margin:{left:8,right:8},
+      tableWidth:W-16,
+      styles:{
+        fontSize:8,
+        cellPadding:3,
+        textColor:COLORES.texto,
+        lineColor:COLORES.grisMedio,
+        lineWidth:0.2
+      },
+      headStyles:{
+        fillColor:COLORES.azulOscuro,
+        textColor:COLORES.blanco,
+        fontStyle:'bold',
+        fontSize:8,
+        halign:'center'
+      },
+      alternateRowStyles:{fillColor:COLORES.grisClaro},
+      columnStyles:{
+        0:{halign:'center',cellWidth:10},
+        1:{halign:'center',cellWidth:24},
+        2:{halign:'center',cellWidth:22},
+        3:{halign:'center',cellWidth:28},
+        4:{halign:'center',cellWidth:22},
+        5:{halign:'center',cellWidth:22},
+        6:{halign:'center',cellWidth:28},
+        7:{halign:'center',cellWidth:22},
+        8:{halign:'center'}
+      },
+      didParseCell:function(data){
+        if(data.section==='body' && (data.column.index===3 || data.column.index===6)){
+          const txt=String(data.cell.raw||'');
+          if(txt.includes('Tardanza')){
+            data.cell.styles.textColor=COLORES.rojo;
+            data.cell.styles.fontStyle='bold';
+          }else if(txt==='Puntual'){
+            data.cell.styles.textColor=COLORES.verde;
+          }
+        }
+        if(data.section==='body' && data.column.index===8){
+          const txt=String(data.cell.raw||'');
+          if(txt !== '—'){
+            data.cell.styles.textColor=COLORES.naranja;
+            data.cell.styles.fontStyle='bold';
+          }
+        }
+      },
+      foot:[['',`Total: ${total}`,`Puntuales: ${puntuales}`,'',`Tardanzas: ${tardanzas}`,'','','',`Check-in: ${checkins}`]],
+      footStyles:{
+        fillColor:COLORES.azulMedio,
+        textColor:COLORES.blanco,
+        fontStyle:'bold',
+        fontSize:8,
+        halign:'center'
+      }
+    });
+
     const pageH=doc.internal.pageSize.getHeight();
-    doc.setFillColor(...COLORES.azulOscuro);doc.rect(0,pageH-8,W,8,'F');
-    doc.setTextColor(...COLORES.blanco);doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.setFillColor(...COLORES.azulOscuro); doc.rect(0,pageH-8,W,8,'F');
+    doc.setTextColor(...COLORES.blanco); doc.setFontSize(7); doc.setFont('helvetica','normal');
     doc.text('FINACORP — Sistema de Control de Asistencia',10,pageH-3);
     doc.text(`Pág. ${idx+1} / ${usuarios.length}`,W-10,pageH-3,{align:'right'});
   });
+
   doc.save(`reporte_asistencia_${mesNombre}_${anio}.pdf`);
   showLoading(false);
   showMsg('✅ PDF generado correctamente','success');
 }
-
-// ══ VIDEOLLAMADA (AGORA) ══════════════════════════════════════
-let agoraClient=null,localTracks={audio:null,video:null},micOn=true,camOn=true,salaActiva=null,checkinSec=3600,checkinTotal=3600,salaGrupoMiembros=[];
-
 async function buscarSala(){
   const codigo=document.getElementById('codigoReunion').value.trim().toUpperCase();
   if(!codigo){document.getElementById('joinMsg').innerHTML='<div class="alert-warning-msg">Ingresa el código de la sala.</div>';return;}
