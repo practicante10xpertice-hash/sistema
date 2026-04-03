@@ -910,54 +910,34 @@ async function cargarEstadoAsistencia(){
 
 async function registrarAsistencia(tipo){
   if(!SESSION||!SESSION.uid){showMsg('Sesión no válida','danger');return;}
-  showLoading(true);
-  const res=await api('registrarAsistencia',{
-    usuario_id:SESSION.uid,tipo,
-    latitud:gpsLat||0,longitud:gpsLng||0,
-    ubicacion_texto:gpsText||'',foto_path:''
-  });
-  if(res&&res.ok&&fotoCaptured){
-    const canvas=document.getElementById('photoCanvas');
-    if(canvas&&canvas.width>0){
-      try{
-        const fotoBase64=canvas.toDataURL('image/jpeg',0.7);
-        const ahora=new Date();
-        api('guardarFotoEvidencia',{
-          usuario_id:SESSION.uid,
-          foto_base64:fotoBase64,
-          tipo,
-          fecha:ahora.toISOString().slice(0,10),
-          hora:ahora.toTimeString().slice(0,8).replace(/:/g,'')
-        });
-      }catch(e){}
+  
+  // ✅ Capturar foto en base64 ANTES de llamar a la API
+  let fotoBase64 = '';
+  if(fotoCaptured){
+    const canvas = document.getElementById('photoCanvas');
+    if(canvas && canvas.width > 0){
+      try{ fotoBase64 = canvas.toDataURL('image/jpeg', 0.7); }catch(e){}
     }
   }
+  
+  showLoading(true);
+  const res = await api('registrarAsistencia',{
+    usuario_id: SESSION.uid,
+    tipo,
+    latitud: gpsLat||0,
+    longitud: gpsLng||0,
+    ubicacion_texto: gpsText||'',
+    foto_base64: fotoBase64   // ✅ Enviar foto junto con el registro
+  });
   showLoading(false);
-  if(res&&res.ok){
+  
+  if(res && res.ok){
     showMsg(res.msg||'Registrado correctamente','success');
     await cargarEstadoAsistencia();
     cargarDashboard();
     verificarSalaActivaParaColaborador();
-  }
-  else showMsg((res&&res.msg)||'Error al registrar. Intenta de nuevo.','danger');
-}
-
-async function verificarSalaActivaParaColaborador(){
-  if(!SESSION||!SESSION.uid||SESSION.rol==='admin')return;
-  const resU=await api('getSesionActivaUsuario',{usuario_id:SESSION.uid});
-  if(resU.ok&&resU.sesion){
-    mostrarBannerSala(resU.sesion, resU.grupo||{nombre:'',miembros:[]});
-    return;
-  }
-  const resG=await api('getGrupos');
-  if(!resG.ok)return;
-  for(const g of (resG.grupos||[])){
-    if(!g.sesion_activa)continue;
-    const esMiembro=(g.miembros||[]).some(m=>parseInt(m.id)===parseInt(SESSION.uid));
-    if(esMiembro){
-      mostrarBannerSala(g.sesion_activa, g);
-      return;
-    }
+  } else {
+    showMsg((res&&res.msg)||'Error al registrar. Intenta de nuevo.','danger');
   }
 }
 
