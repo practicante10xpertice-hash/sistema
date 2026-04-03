@@ -1961,32 +1961,48 @@ async function iniciarReunion(gId, gNombre){
 }
 
 async function cargarSesionesActivas(){
-  const panel=document.getElementById('sesionesActivasPanel');if(!panel)return;
-  const res=await api('getGrupos');if(!res.ok)return;let html='';
-  (res.grupos||[]).forEach(g=>{
+  const panel = document.getElementById('sesionesActivasPanel');
+  if(!panel) return;
+
+  const res = await api('getGrupos');
+  if(!res.ok) return;
+
+  let html = '';
+
+  (res.grupos || []).forEach(g => {
     if(g.sesion_activa){
-      html+=`
+      const nombreSala = String(g.sesion_activa.nombre || '');
+      const nombreSalaEsc = nombreSala.replace(/'/g, "\\'");
+      const codigoSala = String(g.sesion_activa.codigo || '');
+      const channelSala = String(g.sesion_activa.agora_channel || '');
+
+      html += `
       <div class="card-panel mb-3" style="border-left:4px solid var(--success)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
           <div style="font-size:11px;color:var(--success);font-weight:700;letter-spacing:1px">● SALA EN VIVO</div>
-          <button onclick="cerrarSalaAdmin(${g.sesion_activa.id},'${(g.sesion_activa.nombre||'').replace(/'/g,"\\'")}')"
+          <button onclick="cerrarSalaAdmin(${g.sesion_activa.id}, '${nombreSalaEsc}')"
             title="Cerrar sala"
             style="background:rgba(255,94,122,.12);border:1px solid rgba(255,94,122,.25);color:var(--danger);
               border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px">
             <i class="fas fa-stop"></i> Cerrar
           </button>
         </div>
-        <div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)">${g.sesion_activa.nombre||''}</div>
+
+        <div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)">${nombreSala}</div>
         <div style="font-size:13px;color:var(--muted);margin:4px 0">Grupo: ${g.nombre}</div>
-        <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);letter-spacing:3px;margin:10px 0">${g.sesion_activa.codigo||''}</div>
-        <button onclick="showPage('reunion'); abrirSala(${g.sesion_activa.id}, '${g.sesion_activa.codigo}', '${String(g.sesion_activa.nombre || '').replace(/'/g, "\\'")}', '${g.sesion_activa.agora_channel}', ${g.id})"
-  class="btn-primary-custom w-100" style="justify-content:center">
-  <i class="fas fa-sign-in-alt"></i> Entrar a la Sala
-</button>
+        <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);letter-spacing:3px;margin:10px 0">${codigoSala}</div>
+
+        <button
+          onclick="showPage('reunion'); abrirSala(${g.sesion_activa.id}, '${codigoSala}', '${nombreSalaEsc}', '${channelSala}', ${g.id})"
+          class="btn-primary-custom w-100"
+          style="justify-content:center">
+          <i class="fas fa-sign-in-alt"></i> Entrar a la Sala
+        </button>
       </div>`;
     }
   });
-  panel.innerHTML=html||'';
+
+  panel.innerHTML = html || '';
 }
 
 async function cerrarSalaAdmin(sesionId, nombre){
