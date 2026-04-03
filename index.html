@@ -1259,12 +1259,12 @@ function iniciarPollingReunion(){
   },30000);
 }
 
-function entrarDesdeNotificacion(){
-  const banner=document.getElementById('bannerReunionActiva');
-  if(!banner)return;
-  banner.style.display='none';
-  abrirSala(banner._salaId,banner._codigo,banner._nombre,banner._channel);
+async function entrarDesdeNotificacion(){
+  const banner = document.getElementById('bannerReunionActiva');
+  if(!banner) return;
+  banner.style.display = 'none';
   showPage('reunion');
+  await abrirSala(banner._salaId, banner._codigo, banner._nombre, banner._channel);
 }
 
 async function toggleCameraAsist(){const enabled=document.getElementById('enableCamera').checked;const sec=document.getElementById('cameraSection');if(enabled){sec.style.display='block';try{localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});document.getElementById('videoPreview').srcObject=localStream;}catch(e){alert('No se pudo acceder a la cámara: '+e.message);document.getElementById('enableCamera').checked=false;sec.style.display='none';}}else{sec.style.display='none';if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}}}
@@ -1959,8 +1959,9 @@ async function iniciarReunion(gId, gNombre){
   cargarGrupos();
   cargarSesionesActivas();
 
-  if(confirm(`Sala creada con código: ${res.codigo}\n¿Entrar ahora?`))
-    abrirSala(res.id,res.codigo,nombre,res.agora_channel,gId);
+  if(confirm(`Sala creada con código: ${res.codigo}\n¿Entrar ahora?`)){
+  showPage('reunion');
+  await abrirSala(res.id, res.codigo, nombre, res.agora_channel, gId);
 }
 
 async function cargarSesionesActivas(){
