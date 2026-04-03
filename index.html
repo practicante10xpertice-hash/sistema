@@ -2297,6 +2297,8 @@ async function checkinManualReunion(){
       usuario_id: SESSION.uid
     });
 
+    console.log('Respuesta checkinReunion:', ck);
+
     if(!ck || !ck.ok){
       showLoading(false);
       showMsg((ck && ck.msg) || 'No se pudo registrar el check-in','danger');
@@ -2304,6 +2306,7 @@ async function checkinManualReunion(){
     }
 
     const estado = await api('getEstadoHoy', { usuario_id: SESSION.uid });
+    console.log('Estado hoy:', estado);
 
     if(!estado || !estado.ok){
       showLoading(false);
@@ -2324,6 +2327,8 @@ async function checkinManualReunion(){
       tipoAsistencia = 'salida_tarde';
     }
 
+    console.log('Tipo asistencia elegido:', tipoAsistencia);
+
     let msgFinal = 'Check-in de reunión registrado';
 
     if(tipoAsistencia){
@@ -2336,18 +2341,21 @@ async function checkinManualReunion(){
         foto_base64: ''
       });
 
+      console.log('Respuesta registrarAsistencia:', res);
+
       if(res && res.ok){
         msgFinal = `Check-in registrado como ${tipoAsistencia.replaceAll('_',' ')}`;
         await cargarEstadoAsistencia();
         cargarDashboard();
 
-        // agregado para refrescar historial y reportes
         if(typeof cargarHistorial === 'function') await cargarHistorial();
         if(typeof cargarReporte === 'function') await cargarReporte();
         if(typeof cargarAsistencias === 'function') await cargarAsistencias();
       }else if(res && res.msg){
         msgFinal = `Check-in de reunión registrado, pero asistencia no: ${res.msg}`;
       }
+    }else{
+      console.log('No se encontró una asistencia pendiente para registrar');
     }
 
     document.getElementById('ultimoCheckin').textContent =
