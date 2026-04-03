@@ -956,6 +956,24 @@ function mostrarBannerSala(sesion, grupo){
   banner._nombre=sesion.nombre;
   banner._channel=sesion.agora_channel||sesion.channel||'';
 }
+async function verificarSalaActivaParaColaborador(){
+  if(!SESSION||!SESSION.uid||SESSION.rol==='admin')return;
+  const resU=await api('getSesionActivaUsuario',{usuario_id:SESSION.uid});
+  if(resU.ok&&resU.sesion){
+    mostrarBannerSala(resU.sesion, resU.grupo||{nombre:'',miembros:[]});
+    return;
+  }
+  const resG=await api('getGrupos');
+  if(!resG.ok)return;
+  for(const g of (resG.grupos||[])){
+    if(!g.sesion_activa)continue;
+    const esMiembro=(g.miembros||[]).some(m=>parseInt(m.id)===parseInt(SESSION.uid));
+    if(esMiembro){
+      mostrarBannerSala(g.sesion_activa, g);
+      return;
+    }
+  }
+}
 
 let _pollingReunion=null;
 function iniciarPollingReunion(){
