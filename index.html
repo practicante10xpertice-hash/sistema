@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 :root{
-  --ink:#080c15;--surface:#0e1525;--c:#ard111827;--card2:#161f30;
+  --ink:#080c15;--surface:#0e1525;--card:#111827;--card2:#161f30;
   --border:rgba(99,132,255,.12);--border2:rgba(255,255,255,.06);
   --accent:#6384ff;--accent2:#a78bfa;--success:#22d3a8;
   --warning:#f59e0b;--danger:#ff5e7a;--info:#38bdf8;
@@ -304,7 +304,7 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
           <button class="nav-item" onclick="showPage('control')" id="nav-control"><i class="fas fa-list-check"></i> Control Asistencia</button>
           <button class="nav-item" onclick="showPage('reportes')" id="nav-reportes"><i class="fas fa-file-chart-column"></i> Reportes</button>
           <button class="nav-item" onclick="showPage('logs')" id="nav-logs"><i class="fas fa-shield-halved"></i> Logs de Acceso</button>
-          <button class="nav-item" onclick="showPage('evidencias')" id="nav-evidencias"><i class="fas fa-images"></i> Evidencias Foto</button>
+          <button class="nav-item" onclick="showPage('evidencias')" id="nav-evidencias"><i class="fas fa-camera"></i> Evidencias Foto</button>
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -618,26 +618,32 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
             <div class="table-wrapper" id="reporteTable"><p style="color:var(--muted);font-size:14px">Genera un reporte para ver los datos.</p></div>
           </div>
         </div>
+
         <!-- EVIDENCIAS -->
-<div class="page-section" id="page-evidencias">
-  <div class="card-panel mb-4">
-    <div class="card-panel-title"><i class="fas fa-images"></i> Filtros</div>
-    <div class="d-flex gap-3 flex-wrap align-items-end">
-      <div>
-        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">Fecha</label>
-        <input type="date" id="evFecha" class="form-control-custom" style="width:auto">
-      </div>
-      <div>
-        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">Colaborador</label>
-        <select id="evUid" class="form-control-custom" style="width:auto;min-width:200px">
-          <option value="">— Todos —</option>
-        </select>
-      </div>
-      <button class="btn-primary-custom" onclick="cargarEvidencias()"><i class="fas fa-search"></i> Buscar</button>
-    </div>
-  </div>
-  <div id="evidenciasGrid"></div>
-</div>
+        <div class="page-section" id="page-evidencias">
+          <div class="card-panel mb-4">
+            <div class="card-panel-title"><i class="fas fa-images"></i> Filtros</div>
+            <div class="d-flex gap-3 flex-wrap align-items-end">
+              <div>
+                <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">Fecha</label>
+                <input type="date" id="evFecha" class="form-control-custom" style="width:auto">
+              </div>
+              <div>
+                <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">Colaborador</label>
+                <select id="evUid" class="form-control-custom" style="width:auto;min-width:200px">
+                  <option value="">— Todos —</option>
+                </select>
+              </div>
+              <button class="btn-primary-custom" onclick="cargarEvidencias()"><i class="fas fa-search"></i> Buscar</button>
+            </div>
+          </div>
+          <div id="evidenciasGrid">
+            <div class="card-panel text-center py-5">
+              <i class="fas fa-images" style="font-size:48px;color:var(--muted);display:block;margin-bottom:16px"></i>
+              <p style="color:var(--muted)">Selecciona una fecha y busca para ver las evidencias.</p>
+            </div>
+          </div>
+        </div>
 
         <!-- LOGS -->
         <div class="page-section" id="page-logs">
@@ -763,21 +769,10 @@ async function api(accion,data={}){
 
 function limpiarHora(v){
   if(v===null||v===undefined||v==='')return null;
-  if(typeof v==='number'){
-    // Número decimal de Google Sheets (fracción de día)
-    const totalMin=Math.round(v*24*60);
-    return String(Math.floor(totalMin/60)).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0');
-  }
+  if(typeof v==='number'){const m=Math.round(v*24*60);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
   const s=String(v).trim();
-  // Formato HH:MM o HH:MM:SS
   if(/^\d{1,2}:\d{2}/.test(s))return s.slice(0,5);
-  // ISO con T
   if(s.includes('T')){const p=s.split('T')[1];if(p)return p.slice(0,5);}
-  // Fecha 1899-12-30 HH:MM (Google Sheets serializado como string)
-  if(s.includes('1899')||s.includes('1900')){
-    const match=s.match(/(\d{1,2}):(\d{2})/);
-    if(match)return match[1].padStart(2,'0')+':'+match[2];
-  }
   return null;
 }
 
@@ -841,6 +836,8 @@ function mostrarApp(){
   const mes=new Date().getMonth()+1;
   ['filtroMes','rMes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=mes;});
   initHorarioGrid();showPage('dashboard');
+  // Iniciar polling de reuniones para colaboradores
+  if(SESSION.rol!=='admin')iniciarPollingReunion();
 }
 
 window.addEventListener('load',()=>{const s=sessionStorage.getItem('session');if(s){SESSION=JSON.parse(s);if(SESSION.uid){mostrarApp();return;}}document.getElementById('loginScreen').style.display='block';});
@@ -862,7 +859,7 @@ function showPage(page){
   if(page==='control')cargarSelectColabs('ctrlUid');
   if(page==='reportes')cargarSelectColabs('rUid');
   if(page==='logs')cargarLogs();
-  if(page==='evidencias'){cargarSelectColabs('evUid');cargarEvidencias();}
+  if(page==='evidencias'){cargarSelectColabs('evUid');const hoy=new Date().toISOString().slice(0,10);const ef=document.getElementById('evFecha');if(ef&&!ef.value)ef.value=hoy;cargarEvidencias();}
 }
 
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('active');}
@@ -917,65 +914,92 @@ async function cargarEstadoAsistencia(){
 async function registrarAsistencia(tipo){
   if(!SESSION||!SESSION.uid){showMsg('Sesión no válida','danger');return;}
   showLoading(true);
-  // Capturar foto si está habilitada
-  let fotoBase64='';
-  if(document.getElementById('enableCamera')?.checked){
+  const res=await api('registrarAsistencia',{
+    usuario_id:SESSION.uid,tipo,
+    latitud:gpsLat||0,longitud:gpsLng||0,
+    ubicacion_texto:gpsText||'',foto_path:''
+  });
+  // Si hay foto capturada, guardarla en Drive por separado (no bloqueante)
+  if(res&&res.ok&&fotoCaptured){
     const canvas=document.getElementById('photoCanvas');
-    if(canvas&&canvas.width>0)fotoBase64=canvas.toDataURL('image/jpeg',0.7);
-  }
-  const res=await api('registrarAsistencia',{usuario_id:SESSION.uid,tipo,latitud:gpsLat||0,longitud:gpsLng||0,ubicacion_texto:gpsText||'',foto_path:''});
-  // Guardar foto en Drive si hay
-  if(res&&res.ok&&fotoBase64){
-    const ahora=new Date();
-    const fechaStr=ahora.toISOString().slice(0,10);
-    const horaStr=ahora.toTimeString().slice(0,8).replace(/:/g,'');
-    api('guardarFotoEvidencia',{usuario_id:SESSION.uid,foto_base64:fotoBase64,tipo,fecha:fechaStr,hora:horaStr});
+    if(canvas&&canvas.width>0){
+      try{
+        const fotoBase64=canvas.toDataURL('image/jpeg',0.7);
+        const ahora=new Date();
+        api('guardarFotoEvidencia',{
+          usuario_id:SESSION.uid,
+          foto_base64:fotoBase64,
+          tipo,
+          fecha:ahora.toISOString().slice(0,10),
+          hora:ahora.toTimeString().slice(0,8).replace(/:/g,'')
+        });
+      }catch(e){}
+    }
   }
   showLoading(false);
   if(res&&res.ok){
     showMsg(res.msg||'Registrado correctamente','success');
     await cargarEstadoAsistencia();
     cargarDashboard();
-    // Verificar si hay una reunión activa para el colaborador
     verificarSalaActivaParaColaborador();
   }
   else showMsg((res&&res.msg)||'Error al registrar. Intenta de nuevo.','danger');
 }
 
 async function verificarSalaActivaParaColaborador(){
-  // Buscar si el colaborador pertenece a algún grupo con sesión activa
-  const res=await api('getGrupos');
-  if(!res.ok)return;
-  const grupos=res.grupos||[];
-  let salaEncontrada=null;
-  let grupoEncontrado=null;
-  for(const g of grupos){
+  if(!SESSION||!SESSION.uid||SESSION.rol==='admin')return;
+
+  // Estrategia 1: preguntar directamente al backend si este usuario tiene sesión activa
+  // Este endpoint debe existir en tu GAS: devuelve la sesión activa del grupo del usuario
+  const resU=await api('getSesionActivaUsuario',{usuario_id:SESSION.uid});
+  if(resU.ok&&resU.sesion){
+    mostrarBannerSala(resU.sesion, resU.grupo||{nombre:'',miembros:[]});
+    return;
+  }
+
+  // Estrategia 2: buscar en todos los grupos si el usuario aparece como miembro
+  const resG=await api('getGrupos');
+  if(!resG.ok)return;
+  for(const g of (resG.grupos||[])){
     if(!g.sesion_activa)continue;
-    const miembros=g.miembros||[];
-    const esMiembro=miembros.some(m=>parseInt(m.id)===parseInt(SESSION.uid));
-    if(esMiembro){salaEncontrada=g.sesion_activa;grupoEncontrado=g;break;}
+    const esMiembro=(g.miembros||[]).some(m=>parseInt(m.id)===parseInt(SESSION.uid));
+    if(esMiembro){
+      mostrarBannerSala(g.sesion_activa, g);
+      return;
+    }
   }
-  if(!salaEncontrada)return;
+}
 
-  // Guardar miembros para la sala
-  salaGrupoMiembros=grupoEncontrado.miembros||[];
-
-  // Mostrar banner de reunión activa sobre la pantalla de asistencia
+function mostrarBannerSala(sesion, grupo){
   const banner=document.getElementById('bannerReunionActiva');
-  if(banner){
-    document.getElementById('bannerReunionNombre').textContent=salaEncontrada.nombre||'Reunión';
-    document.getElementById('bannerReunionGrupo').textContent=grupoEncontrado.nombre||'';
-    document.getElementById('bannerReunionCodigo').textContent=salaEncontrada.codigo||'';
-    banner.style.display='flex';
-    // Auto-ocultar tras 30 seg si no hace clic
-    clearTimeout(banner._timer);
-    banner._timer=setTimeout(()=>{banner.style.display='none';},30000);
-    // Guardar datos para entrar al hacer clic
-    banner._salaId=salaEncontrada.id;
-    banner._codigo=salaEncontrada.codigo;
-    banner._nombre=salaEncontrada.nombre;
-    banner._channel=salaEncontrada.agora_channel;
-  }
+  if(!banner)return;
+  // Si ya está mostrando esta misma sala, no interrumpir
+  if(banner._salaId===sesion.id&&banner.style.display==='flex')return;
+
+  salaGrupoMiembros=grupo.miembros||[];
+
+  document.getElementById('bannerReunionNombre').textContent=sesion.nombre||'Reunión en curso';
+  document.getElementById('bannerReunionGrupo').textContent=grupo.nombre||'';
+  document.getElementById('bannerReunionCodigo').textContent=sesion.codigo||'';
+  banner.style.display='flex';
+  clearTimeout(banner._timer);
+  // No auto-ocultar — queda visible hasta que el usuario lo ignore o entre
+  banner._salaId=sesion.id;
+  banner._codigo=sesion.codigo;
+  banner._nombre=sesion.nombre;
+  banner._channel=sesion.agora_channel||sesion.channel||'';
+}
+
+// Polling: verificar cada 30 segundos si apareció una sala activa para este colaborador
+let _pollingReunion=null;
+function iniciarPollingReunion(){
+  if(_pollingReunion)return; // ya está corriendo
+  _pollingReunion=setInterval(()=>{
+    // Solo verificar si el banner NO está visible (si ya lo ven, no molestar)
+    const banner=document.getElementById('bannerReunionActiva');
+    if(banner&&banner.style.display==='flex')return;
+    verificarSalaActivaParaColaborador();
+  },30000); // cada 30 segundos
 }
 
 function entrarDesdeNotificacion(){
@@ -1551,7 +1575,19 @@ async function agregarMiembro(gId){
 }
 async function quitarMiembro(gId,uId){const res=await api('quitarMiembro',{grupo_id:gId,usuario_id:uId});if(res.ok){showMsg('Miembro removido','success');cargarGrupos();}}
 
-async function iniciarReunion(gId,gNombre){
+async function cerrarSalaAdmin(sesionId, nombre){
+  if(!confirm(`¿Cerrar la sala "${nombre}"?\n\nTodos los participantes serán desconectados.`))return;
+  showLoading(true);
+  const res=await api('cerrarSesion',{id:sesionId});
+  showLoading(false);
+  if(res.ok){
+    showMsg('✅ Sala cerrada correctamente','success');
+    cargarGrupos();
+    cargarSesionesActivas();
+  } else {
+    showMsg('❌ Error al cerrar la sala: '+(res.msg||''),'danger');
+  }
+}
   const nombre=prompt('Nombre de la reunión:','Reunión '+new Date().toLocaleDateString('es-PE'));if(!nombre)return;
 
   showLoading(true);
@@ -1576,9 +1612,44 @@ async function iniciarReunion(gId,gNombre){
 async function cargarSesionesActivas(){
   const panel=document.getElementById('sesionesActivasPanel');if(!panel)return;
   const res=await api('getGrupos');if(!res.ok)return;let html='';
-  (res.grupos||[]).forEach(g=>{if(g.sesion_activa){html+=`<div class="card-panel mb-3" style="border-left:4px solid var(--success)"><div style="font-size:11px;color:var(--success);font-weight:700;letter-spacing:1px;margin-bottom:6px">● SALA EN VIVO</div><div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)">${g.sesion_activa.nombre||''}</div><div style="font-size:13px;color:var(--muted);margin:4px 0">Grupo: ${g.nombre}</div><div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);letter-spacing:3px;margin:10px 0">${g.sesion_activa.codigo||''}</div><div class="d-flex flex-column gap-2"><button onclick="abrirSala(${g.sesion_activa.id},'${g.sesion_activa.codigo}','${g.sesion_activa.nombre}','${g.sesion_activa.agora_channel}')" class="btn-primary-custom w-100" style="justify-content:center"><i class="fas fa-sign-in-alt"></i> Entrar a la Sala</button><button onclick="cerrarSalaDirecta(${g.sesion_activa.id})" class="btn-danger-custom w-100" style="justify-content:center"><i class="fas fa-stop-circle"></i> Cerrar y Eliminar Sala</button></div></div>`;
-  }});
-  panel.innerHTML=html;
+  (res.grupos||[]).forEach(g=>{
+    if(g.sesion_activa){
+      html+=`
+      <div class="card-panel mb-3" style="border-left:4px solid var(--success)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="font-size:11px;color:var(--success);font-weight:700;letter-spacing:1px">● SALA EN VIVO</div>
+          <button onclick="cerrarSalaAdmin(${g.sesion_activa.id},'${(g.sesion_activa.nombre||'').replace(/'/g,"\\'")}')"
+            title="Cerrar sala"
+            style="background:rgba(255,94,122,.12);border:1px solid rgba(255,94,122,.25);color:var(--danger);
+              border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px">
+            <i class="fas fa-stop"></i> Cerrar
+          </button>
+        </div>
+        <div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)">${g.sesion_activa.nombre||''}</div>
+        <div style="font-size:13px;color:var(--muted);margin:4px 0">Grupo: ${g.nombre}</div>
+        <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);letter-spacing:3px;margin:10px 0">${g.sesion_activa.codigo||''}</div>
+        <button onclick="abrirSala(${g.sesion_activa.id},'${g.sesion_activa.codigo}','${g.sesion_activa.nombre}','${g.sesion_activa.agora_channel}')"
+          class="btn-primary-custom w-100" style="justify-content:center">
+          <i class="fas fa-sign-in-alt"></i> Entrar a la Sala
+        </button>
+      </div>`;
+    }
+  });
+  panel.innerHTML=html||'';
+}
+
+async function cerrarSalaAdmin(sesionId, nombre){
+  if(!confirm(`¿Cerrar la sala "${nombre}"?\n\nTodos los participantes serán desconectados.`))return;
+  showLoading(true);
+  const res=await api('cerrarSesion',{id:sesionId});
+  showLoading(false);
+  if(res.ok){
+    showMsg('✅ Sala cerrada correctamente','success');
+    cargarGrupos();
+    cargarSesionesActivas();
+  } else {
+    showMsg('❌ Error al cerrar la sala: '+(res.msg||''),'danger');
+  }
 }
 
 async function cargarControl(){
@@ -1603,6 +1674,36 @@ async function cargarLogs(){
   const logs=res.logs||[];const exit=logs.filter(l=>l.resultado==='exitoso').length;const fall=logs.filter(l=>l.resultado==='fallido').length;const bloq=logs.filter(l=>l.resultado==='bloqueado').length;
   document.getElementById('logsStats').innerHTML=`<div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-green"><i class="fas fa-check-circle"></i></div><div class="stat-value">${exit}</div><div class="stat-label">Exitosos</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-red"><i class="fas fa-times-circle"></i></div><div class="stat-value">${fall}</div><div class="stat-label">Fallidos</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-orange"><i class="fas fa-ban"></i></div><div class="stat-value">${bloq}</div><div class="stat-label">Bloqueados</div></div></div><div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon icon-blue"><i class="fas fa-database"></i></div><div class="stat-value">${res.total||0}</div><div class="stat-label">Total Registros</div></div></div>`;
   document.getElementById('logsTable').innerHTML=logs.length?`<table class="table-custom"><thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>IP</th><th>Resultado</th><th>Mensaje</th></tr></thead><tbody>`+logs.map(l=>{const badge=l.resultado==='exitoso'?'badge-green':l.resultado==='fallido'?'badge-red':'badge-orange';return`<tr><td style="font-size:13px;white-space:nowrap">${l.creado_en||''}</td><td><strong>${l.usuario_str||''}</strong></td><td><code style="font-size:11px;color:var(--muted)">${l.ip_address||''}</code></td><td><span class="badge-custom ${badge}">${l.resultado||''}</span></td><td style="font-size:13px;color:var(--muted)">${l.mensaje||'—'}</td></tr>`;}).join('')+'</tbody></table>':'<p style="color:var(--muted);padding:12px;font-size:14px">Sin registros.</p>';
+}
+
+async function cargarEvidencias(){
+  const fecha=document.getElementById('evFecha')?.value||'';
+  const uid=document.getElementById('evUid')?.value||'';
+  const cont=document.getElementById('evidenciasGrid');if(!cont)return;
+  cont.innerHTML='<div class="text-center py-5"><div class="loading-spinner mx-auto"></div></div>';
+  showLoading(true);
+  const res=await api('getEvidencias',{usuario_id:uid,fecha});
+  showLoading(false);
+  if(!res.ok||!res.evidencias?.length){
+    cont.innerHTML='<div class="card-panel text-center py-5"><i class="fas fa-images" style="font-size:48px;color:var(--muted);display:block;margin-bottom:16px"></i><p style="color:var(--muted)">No hay evidencias fotográficas para los filtros seleccionados.</p></div>';
+    return;
+  }
+  cont.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">`+
+  res.evidencias.map(e=>`
+    <div class="card-panel" style="padding:16px">
+      <img src="${e.foto_path||''}" style="width:100%;border-radius:10px;margin-bottom:12px;aspect-ratio:4/3;object-fit:cover;background:var(--card2)"
+        onerror="this.src='';this.style.display='none'">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${e.nombre||''} ${e.apellido||''}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="badge-custom ${e.tipo==='entrada'?'badge-green':'badge-blue'}">${e.tipo||''}</span>
+        <span>${e.fecha||''}</span>
+        <strong style="color:var(--text)">${String(e.hora||'').slice(0,5)}</strong>
+      </div>
+      ${parseInt(e.tardanza)?`<div style="margin-top:6px"><span class="badge-custom badge-orange"><i class="fas fa-clock"></i> +${e.minutos_tardanza} min tardanza</span></div>`:'<div style="margin-top:6px"><span class="badge-custom badge-green"><i class="fas fa-check"></i> A tiempo</span></div>'}
+      ${e.foto_path?`<a href="${e.foto_path}" target="_blank" class="btn-outline-custom" style="margin-top:10px;width:100%;justify-content:center;font-size:13px">
+        <i class="fas fa-external-link-alt"></i> Ver imagen completa
+      </a>`:''}
+    </div>`).join('')+`</div>`;
 }
 
 async function exportarPDF(){
@@ -1827,6 +1928,8 @@ async function salirSala(){
   document.getElementById('reunionSalaScreen').style.display='none';
   document.getElementById('reunionJoinScreen').style.display='block';
   document.getElementById('codigoReunion').value='';
+  // Reiniciar polling al salir de la sala
+  if(SESSION.rol!=='admin')iniciarPollingReunion();
 }
 
 async function cerrarSala(){
@@ -1839,46 +1942,6 @@ async function cerrarSala(){
   document.getElementById('reunionSalaScreen').style.display='none';
   document.getElementById('reunionJoinScreen').style.display='block';
   showPage('grupos');
-}
-async function cerrarSalaDirecta(id){
-  if(!confirm('¿Cerrar esta sala? Se eliminará para todos los participantes.'))return;
-  showLoading(true);
-  const res=await api('cerrarSesion',{id});
-  showLoading(false);
-  if(res.ok){
-    showMsg('✅ Sala cerrada correctamente','success');
-    cargarGrupos();
-    cargarSesionesActivas();
-  } else {
-    showMsg('❌ Error al cerrar la sala: '+(res.msg||''),'danger');
-  }
-}
-async function cargarEvidencias(){
-  const fecha=document.getElementById('evFecha')?.value||'';
-  const uid=document.getElementById('evUid')?.value||'';
-  showLoading(true);
-  const res=await api('getEvidencias',{usuario_id:uid,fecha});
-  showLoading(false);
-  const cont=document.getElementById('evidenciasGrid');if(!cont)return;
-  if(!res.ok||!res.evidencias?.length){
-    cont.innerHTML='<div class="card-panel text-center py-5"><i class="fas fa-images" style="font-size:48px;color:var(--muted);display:block;margin-bottom:16px"></i><p style="color:var(--muted)">No hay evidencias fotográficas para los filtros seleccionados.</p></div>';
-    return;
-  }
-  cont.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">`+
-  res.evidencias.map(e=>`
-    <div class="card-panel" style="padding:16px">
-      <img src="${e.foto_path}" style="width:100%;border-radius:10px;margin-bottom:12px;aspect-ratio:16/9;object-fit:cover;background:#000"
-        onerror="this.style.display='none'">
-      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${e.nombre||''} ${e.apellido||''}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:4px">
-        <span class="badge-custom ${e.tipo==='entrada'?'badge-green':'badge-blue'}">${e.tipo||''}</span>
-        &nbsp; ${e.fecha||''} &nbsp; <strong style="color:var(--text)">${e.hora||''}</strong>
-      </div>
-      ${parseInt(e.tardanza)?`<div style="margin-top:6px"><span class="badge-custom badge-orange">+${e.minutos_tardanza}min tardanza</span></div>`:''}
-      <a href="${e.foto_path}" target="_blank" class="btn-outline-custom" style="margin-top:10px;width:100%;justify-content:center;font-size:13px">
-        <i class="fas fa-external-link-alt"></i> Ver en Drive
-      </a>
-    </div>`).join('')+`</div>`;
 }
 
 window.addEventListener('beforeunload',()=>{
