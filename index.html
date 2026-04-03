@@ -1315,6 +1315,7 @@ async function cargarHistorial(){
     const sm=regs.find(r=>r.tipo==='salida_manana');
     const et=regs.find(r=>r.tipo==='entrada_tarde');
     const st=regs.find(r=>r.tipo==='salida_tarde');
+    const cr=regs.filter(r=>r.tipo==='checkin_reunion');
 
     if(em || et) diasPresentes++;
 
@@ -1377,6 +1378,7 @@ async function cargarHistorial(){
           <th>Salida Mañana</th>
           <th>Entrada Tarde</th>
           <th>Salida Tarde</th>
+          <th>Check-in Reunión</th>
           <th>Horas</th>
           <th>Estado</th>
         </tr>
@@ -1420,6 +1422,7 @@ async function cargarHistorial(){
         <td>${sm ? String(sm.hora).slice(0,5) : '—'}</td>
         <td>${et ? String(et.hora).slice(0,5) : '—'}</td>
         <td>${st ? String(st.hora).slice(0,5) : '—'}</td>
+        <td>${cr && cr.length ? cr.map(x => String(x.hora).slice(0,5)).join(', ') : '—'}</td>
         <td>${horasTxt}</td>
         <td>${estado}</td>
       </tr>
@@ -2356,6 +2359,27 @@ async function checkinManualReunion(){
       }
     }else{
       console.log('No se encontró una asistencia pendiente para registrar');
+
+      const resCheckHist = await api('registrarCheckinReunion', {
+        usuario_id: SESSION.uid,
+        sesion_id: salaActiva.id,
+        latitud: gpsLat || 0,
+        longitud: gpsLng || 0,
+        ubicacion_texto: gpsText || 'Check-in manual desde sala de reunión',
+        foto_base64: ''
+      });
+
+      console.log('Respuesta registrarCheckinReunion:', resCheckHist);
+
+      if(resCheckHist && resCheckHist.ok){
+        msgFinal = '✅ Check-in de reunión registrado en historial';
+
+        if(typeof cargarHistorial === 'function') await cargarHistorial();
+        if(typeof cargarReporte === 'function') await cargarReporte();
+        if(typeof cargarAsistencias === 'function') await cargarAsistencias();
+      }else if(resCheckHist && resCheckHist.msg){
+        msgFinal = resCheckHist.msg;
+      }
     }
 
     document.getElementById('ultimoCheckin').textContent =
