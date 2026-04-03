@@ -2177,20 +2177,186 @@ async function buscarSala(){
 }
 
 async function abrirSala(id,codigo,nombre,channel,gId=null){
-  if(gId&&!salaGrupoMiembros.length){
-    const colRes=await api('getGrupos');
+  if(gId && !salaGrupoMiembros.length){
+    const colRes = await api('getGrupos');
     if(colRes.ok){
-      const grupo=(colRes.grupos||[]).find(g=>parseInt(g.id)===parseInt(gId));
-      if(grupo&&grupo.miembros)salaGrupoMiembros=grupo.miembros;
+      const grupo = (colRes.grupos || []).find(g => parseInt(g.id) === parseInt(gId));
+      if(grupo && grupo.miembros) salaGrupoMiembros = grupo.miembros;
     }
   }
-  salaActiva={id,codigo,nombre,channel};
-  document.getElementById('reunionJoinScreen').style.display='none';
-  const sala=document.getElementById('reunionSalaScreen');sala.style.display='block';
-  sala.innerHTML=`<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 22px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px"><div><div style="font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--text)"><i class="fas fa-video" style="color:var(--accent)"></i> ${nombre}</div><div style="font-size:13px;color:var(--muted)">Código: <strong style="color:var(--accent);letter-spacing:2px">${codigo}</strong> &nbsp;•&nbsp; <span id="totalPart">0</span> participantes</div></div><div class="d-flex gap-2 align-items-center flex-wrap"><div class="live-badge"><div class="live-dot"></div> EN VIVO</div>${SESSION.rol==='admin'?`<button onclick="cerrarSala()" class="btn-danger-custom"><i class="fas fa-stop"></i> Cerrar Sala</button>`:''}<button onclick="salirSala()" class="btn-outline-custom"><i class="fas fa-door-closed"></i> Salir</button></div></div><div class="sala-layout"><div><div class="video-grid" id="videoGrid"><div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--muted);flex-direction:column;gap:12px"><div class="loading-spinner"></div><span style="font-size:14px">Conectando a Agora...</span></div></div><div class="controles"><button class="ctrl-btn active" id="btnMic" onclick="toggleMic()"><i class="fas fa-microphone" id="iconMic"></i></button><button class="ctrl-btn active" id="btnCam" onclick="toggleCam()"><i class="fas fa-video" id="iconCam"></i></button><button class="ctrl-btn danger" onclick="salirSala()"><i class="fas fa-phone-slash"></i></button><span style="color:var(--muted);font-size:13px;margin-left:8px"><i class="fas fa-clock"></i> <span id="duracion">00:00</span></span></div></div><div style="display:flex;flex-direction:column;gap:14px"><div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px"><h4 style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px"><i class="fas fa-clock" style="color:var(--accent)"></i> Check-in de Presencia</h4><div class="timer-circle" id="timerCircle">60:00</div><p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">Check-in automático cada 60 min</p><button onclick="hacerCheckin(false)" class="btn-primary-custom w-100" style="justify-content:center;font-size:13px"><i class="fas fa-camera"></i> Check-in Manual</button><div style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center">Último: <strong id="ultimoCheckin" style="color:var(--success)">—</strong></div><canvas id="snapCanvas" style="display:none"></canvas></div><div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;flex:1"><h4 style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px"><i class="fas fa-users" style="color:var(--accent)"></i> Participantes</h4><div id="listaParticipantes"><p style="color:var(--muted);font-size:13px">Conectando...</p></div></div></div></div>`;
-  await initAgora(id,channel);
-}
 
+  salaActiva = { id, codigo, nombre, channel };
+
+  document.getElementById('reunionJoinScreen').style.display = 'none';
+  const sala = document.getElementById('reunionSalaScreen');
+  sala.style.display = 'block';
+
+  sala.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 22px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--text)">
+          <i class="fas fa-video" style="color:var(--accent)"></i> ${nombre}
+        </div>
+        <div style="font-size:13px;color:var(--muted)">
+          Código: <strong style="color:var(--accent);letter-spacing:2px">${codigo}</strong>
+          &nbsp;•&nbsp;
+          <span id="totalPart">0</span> participantes
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <div class="live-badge"><div class="live-dot"></div> EN VIVO</div>
+        ${SESSION.rol==='admin' ? `
+          <button onclick="cerrarSala()" class="btn-danger-custom">
+            <i class="fas fa-stop"></i> Cerrar Sala
+          </button>` : ''}
+        <button onclick="salirSala()" class="btn-outline-custom">
+          <i class="fas fa-door-closed"></i> Salir
+        </button>
+      </div>
+    </div>
+
+    <div class="sala-layout">
+      <div>
+        <div class="video-grid" id="videoGrid">
+          <div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--muted);flex-direction:column;gap:12px">
+            <div class="loading-spinner"></div>
+            <span style="font-size:14px">Conectando a Agora...</span>
+          </div>
+        </div>
+
+        <div class="controles">
+          <button class="ctrl-btn active" id="btnMic" onclick="toggleMic()">
+            <i class="fas fa-microphone" id="iconMic"></i>
+          </button>
+          <button class="ctrl-btn active" id="btnCam" onclick="toggleCam()">
+            <i class="fas fa-video" id="iconCam"></i>
+          </button>
+          <button class="ctrl-btn danger" onclick="salirSala()">
+            <i class="fas fa-phone-slash"></i>
+          </button>
+          <span style="color:var(--muted);font-size:13px;margin-left:8px">
+            <i class="fas fa-clock"></i> <span id="duracion">00:00</span>
+          </span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px">
+          <h4 style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">
+            <i class="fas fa-clock" style="color:var(--accent)"></i> Check-in de Presencia
+          </h4>
+
+          <div class="timer-circle" id="timerCircle">60:00</div>
+
+          <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">
+            Check-in automático cada 60 min
+          </p>
+
+          <button onclick="checkinManualReunion()" class="btn-primary-custom w-100" style="justify-content:center;font-size:13px">
+            <i class="fas fa-camera"></i> Check-in Manual
+          </button>
+
+          <div style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center">
+            Último: <strong id="ultimoCheckin" style="color:var(--success)">—</strong>
+          </div>
+
+          <canvas id="snapCanvas" style="display:none"></canvas>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;flex:1">
+          <h4 style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">
+            <i class="fas fa-users" style="color:var(--accent)"></i> Participantes
+          </h4>
+          <div id="listaParticipantes">
+            <p style="color:var(--muted);font-size:13px">Conectando...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  await initAgora(id, channel);
+}
+async function checkinManualReunion(){
+  try{
+    if(!SESSION || !SESSION.uid){
+      showMsg('Sesión no válida','danger');
+      return;
+    }
+
+    if(!salaActiva || !salaActiva.id){
+      showMsg('No hay una sala activa','danger');
+      return;
+    }
+
+    showLoading(true);
+
+    const ck = await api('checkinReunion', {
+      sesion_id: salaActiva.id,
+      usuario_id: SESSION.uid
+    });
+
+    if(!ck || !ck.ok){
+      showLoading(false);
+      showMsg((ck && ck.msg) || 'No se pudo registrar el check-in','danger');
+      return;
+    }
+
+    const estado = await api('getEstadoHoy', { usuario_id: SESSION.uid });
+
+    if(!estado || !estado.ok){
+      showLoading(false);
+      showMsg('Se registró el check-in de reunión, pero no se pudo validar la asistencia','warning');
+      document.getElementById('ultimoCheckin').textContent = new Date().toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
+      return;
+    }
+
+    let tipoAsistencia = null;
+
+    if(!estado.entrada_manana_registrada){
+      tipoAsistencia = 'entrada_manana';
+    }else if(estado.entrada_manana_registrada && !estado.salida_manana_registrada){
+      tipoAsistencia = 'salida_manana';
+    }else if(estado.salida_manana_registrada && !estado.entrada_tarde_registrada){
+      tipoAsistencia = 'entrada_tarde';
+    }else if(estado.entrada_tarde_registrada && !estado.salida_tarde_registrada){
+      tipoAsistencia = 'salida_tarde';
+    }
+
+    let msgFinal = 'Check-in de reunión registrado';
+
+    if(tipoAsistencia){
+      const res = await api('registrarAsistencia', {
+        usuario_id: SESSION.uid,
+        tipo: tipoAsistencia,
+        latitud: gpsLat || 0,
+        longitud: gpsLng || 0,
+        ubicacion_texto: gpsText || 'Check-in manual desde sala de reunión',
+        foto_base64: ''
+      });
+
+      if(res && res.ok){
+        msgFinal = `Check-in registrado como ${tipoAsistencia.replaceAll('_',' ')}`;
+        await cargarEstadoAsistencia();
+        cargarDashboard();
+      }else if(res && res.msg){
+        msgFinal = `Check-in de reunión registrado, pero asistencia no: ${res.msg}`;
+      }
+    }
+
+    document.getElementById('ultimoCheckin').textContent =
+      new Date().toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
+
+    showLoading(false);
+    showMsg(msgFinal, 'success');
+
+  }catch(e){
+    showLoading(false);
+    console.error('Error en checkinManualReunion:', e);
+    showMsg('Error al registrar el check-in manual','danger');
+  }
+}
 async function initAgora(sesionId,channel){
   try{
     agoraClient=AgoraRTC.createClient({mode:'rtc',codec:'vp8'});
