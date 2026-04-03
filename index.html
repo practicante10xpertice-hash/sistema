@@ -909,44 +909,74 @@ async function cargarEstadoAsistencia(){
 }
 
 async function registrarAsistencia(tipo){
-  if(!SESSION||!SESSION.uid){showMsg('Sesión no válida','danger');return;}
-  
+  if(!SESSION || !SESSION.uid){
+    showMsg('Sesión no válida','danger');
+    return;
+  }
+
   let fotoBase64 = '';
+
   if(fotoCaptured){
     const canvas = document.getElementById('photoCanvas');
+
     if(canvas && canvas.width > 0){
       try{
-        // ✅ Calidad 0.4 = ~15-30KB, suficiente para evidencia
+        // Calidad inicial
         fotoBase64 = canvas.toDataURL('image/jpeg', 0.4);
-        // ✅ Verificar tamaño — si supera 40KB, reducir más
+
+        // Si pesa mucho, reducir más
         if(fotoBase64.length > 55000){
           fotoBase64 = canvas.toDataURL('image/jpeg', 0.2);
         }
-        console.log('Foto size:', Math.round(fotoBase64.length/1024)+'KB');
+
+        console.log('fotoCaptured:', fotoCaptured);
+        console.log('fotoBase64 length:', fotoBase64 ? fotoBase64.length : 0);
+        console.log('fotoBase64 preview:', fotoBase64 ? fotoBase64.substring(0, 50) : 'VACIO');
+        console.log('Foto size:', Math.round(fotoBase64.length / 1024) + 'KB');
+
       }catch(e){
         console.error('Error capturando foto:', e);
       }
+    } else {
+      console.log('Canvas no disponible o sin ancho');
     }
+  } else {
+    console.log('No se capturó foto');
   }
-  
+
   showLoading(true);
-  const res = await api('registrarAsistencia',{
+
+  const payload = {
     usuario_id: SESSION.uid,
     tipo,
-    latitud: gpsLat||0,
-    longitud: gpsLng||0,
-    ubicacion_texto: gpsText||'',
+    latitud: gpsLat || 0,
+    longitud: gpsLng || 0,
+    ubicacion_texto: gpsText || '',
     foto_base64: fotoBase64
+  };
+
+  console.log('Payload enviar:', {
+    usuario_id: payload.usuario_id,
+    tipo: payload.tipo,
+    latitud: payload.latitud,
+    longitud: payload.longitud,
+    ubicacion_texto: payload.ubicacion_texto,
+    foto_base64_length: payload.foto_base64 ? payload.foto_base64.length : 0
   });
+
+  const res = await api('registrarAsistencia', payload);
+
   showLoading(false);
-  
+
+  console.log('Respuesta backend:', res);
+
   if(res && res.ok){
-    showMsg(res.msg||'Registrado correctamente','success');
+    showMsg(res.msg || 'Registrado correctamente','success');
     await cargarEstadoAsistencia();
     cargarDashboard();
     verificarSalaActivaParaColaborador();
   } else {
-    showMsg((res&&res.msg)||'Error al registrar. Intenta de nuevo.','danger');
+    showMsg((res && res.msg) || 'Error al registrar. Intenta de nuevo.','danger');
   }
 }
 
