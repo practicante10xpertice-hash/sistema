@@ -761,15 +761,7 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
 'use strict';
 
 // ══ ESTADO GLOBAL ════════════════════════════════════════════
-let SESSION={
-  uid:null,
-  nombre:'',
-  rol:'',
-  hEntrada:'09:00',
-  hSalida:'18:00',
-  tolerancia:10,
-  diasHorario:{}
-};
+let SESSION={uid:null,nombre:'',rol:'',hEntrada:'09:00',hSalida:'18:00',tolerancia:10,diasHorario:{}};
 const AGORA_APP_ID='9bb873d39ae348d6a52390e17d051939';
 const GAS_URL='https://script.google.com/macros/s/AKfycbyBbFVx5NgYnslKpu5b2jzlG0aegWjdh-jPTqciJxqG6IbqZ1kDPULndAg9qDcwTmfRrg/exec';
 const DIAS_SEMANA=[{key:'lun',label:'LUN',full:'Lunes'},{key:'mar',label:'MAR',full:'Martes'},{key:'mie',label:'MIÉ',full:'Miércoles'},{key:'jue',label:'JUE',full:'Jueves'},{key:'vie',label:'VIE',full:'Viernes'},{key:'sab',label:'SÁB',full:'Sábado'},{key:'dom',label:'DOM',full:'Domingo'}];
@@ -841,31 +833,48 @@ async function doLogin(){
   showLoading(false);btn.disabled=false;document.getElementById('btnLoginText').textContent='Ingresar al Sistema';
   if(res.ok){
     let diasHorario = {};
-try{
-  diasHorario = res.user.dias_horario
-    ? (typeof res.user.dias_horario === 'string'
-        ? JSON.parse(res.user.dias_horario)
-        : res.user.dias_horario)
-    : {};
-}catch(e){
-  diasHorario = {};
+    try{
+      diasHorario = res.user.dias_horario
+        ? (typeof res.user.dias_horario === 'string'
+            ? JSON.parse(res.user.dias_horario)
+            : res.user.dias_horario)
+        : {};
+    }catch(e){
+      diasHorario = {};
+    }
+
+    SESSION = {
+      uid: res.user.id,
+      nombre: res.user.nombre,
+      rol: res.user.rol,
+      hEntrada: limpiarHora(res.user.hora_entrada) || '09:00',
+      hSalida: limpiarHora(res.user.hora_salida) || '18:00',
+      tolerancia: res.user.tolerancia_min || 10,
+      diasHorario: diasHorario
+    };
+
+    sessionStorage.setItem('session', JSON.stringify(SESSION));
+    mostrarApp();
+  }else{
+    err.innerHTML='<i class="fas fa-circle-exclamation"></i> '+(res.msg||'Credenciales incorrectas');
+    err.style.display='flex';
+  }
 }
 
-SESSION = {
-  uid: res.user.id,
-  nombre: res.user.nombre,
-  rol: res.user.rol,
-  hEntrada: limpiarHora(res.user.hora_entrada) || '09:00',
-  hSalida: limpiarHora(res.user.hora_salida) || '18:00',
-  tolerancia: res.user.tolerancia_min || 10,
-  diasHorario: diasHorario
-};
-    sessionStorage.setItem('session',JSON.stringify(SESSION));mostrarApp();
-  }else{err.innerHTML='<i class="fas fa-circle-exclamation"></i> '+(res.msg||'Credenciales incorrectas');err.style.display='flex';}
+function doLogout(){
+  sessionStorage.removeItem('session');
+  SESSION={
+    uid:null,
+    nombre:'',
+    rol:'',
+    hEntrada:'09:00',
+    hSalida:'18:00',
+    tolerancia:10,
+    diasHorario:{}
+  };
+  document.getElementById('loginScreen').style.display='block';
+  document.getElementById('appScreen').style.display='none';
 }
-
-function doLogout(){sessionStorage.removeItem('session');SESSION={uid:null,nombre:'',rol:'',hEntrada:'09:00',hSalida:'18:00',tolerancia:10};document.getElementById('loginScreen').style.display='block';document.getElementById('appScreen').style.display='none';}
-
 function mostrarApp(){
   document.getElementById('loginScreen').style.display='none';document.getElementById('appScreen').style.display='block';
   const initials=SESSION.nombre.split(' ').map(w=>w[0]?.toUpperCase()||'').slice(0,2).join('');
