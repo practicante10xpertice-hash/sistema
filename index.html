@@ -2714,7 +2714,6 @@ async function cerrarSala(){
   document.getElementById('reunionJoinScreen').style.display='block';
   showPage('grupos');
 }
-
 window.addEventListener('beforeunload',()=>{
   if(!salaActiva)return;
   if(localTracks.audio){localTracks.audio.stop();localTracks.audio.close();}
