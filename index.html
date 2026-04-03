@@ -927,8 +927,20 @@ async function registrarAsistencia(tipo){
     latitud: gpsLat||0,
     longitud: gpsLng||0,
     ubicacion_texto: gpsText||'',
-    foto_base64: fotoBase64   // ✅ Enviar foto junto con el registro
+    foto_path: ''
   });
+  
+  // Guardar foto por separado después del registro
+  if(res && res.ok && fotoBase64){
+    const ahora = new Date();
+    api('guardarFotoEvidencia',{
+      usuario_id: SESSION.uid,
+      foto_base64: fotoBase64,
+      tipo,
+      fecha: ahora.toISOString().slice(0,10),
+      hora: ahora.toTimeString().slice(0,8)
+    });
+  }
   showLoading(false);
   
   if(res && res.ok){
