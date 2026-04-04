@@ -2527,15 +2527,8 @@ async function abrirSala(id,codigo,nombre,channel,gId=null){
 }
 async function checkinManualReunion(){
   try{
-    if(!SESSION || !SESSION.uid){
-      showMsg('Sesión no válida','danger');
-      return;
-    }
-
-    if(!salaActiva || !salaActiva.id){
-      showMsg('No hay una sala activa','danger');
-      return;
-    }
+    if(!SESSION?.uid){ showMsg('Sesión no válida','danger'); return; }
+    if(!salaActiva?.id){ showMsg('No hay una sala activa','danger'); return; }
 
     showLoading(true);
 
@@ -2544,98 +2537,21 @@ async function checkinManualReunion(){
       usuario_id: SESSION.uid
     });
 
-    console.log('Respuesta checkinReunion:', ck);
-
-    if(!ck || !ck.ok){
-      showLoading(false);
-      showMsg((ck && ck.msg) || 'No se pudo registrar el check-in','danger');
-      return;
-    }
-
-    const estado = await api('getEstadoHoy', { usuario_id: SESSION.uid });
-    console.log('Estado hoy:', estado);
-
-    if(!estado || !estado.ok){
-      showLoading(false);
-      showMsg('Se registró el check-in de reunión, pero no se pudo validar la asistencia','warning');
-      document.getElementById('ultimoCheckin').textContent = new Date().toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
-      return;
-    }
-
-    let tipoAsistencia = null;
-
-    if(!estado.entrada_manana_registrada){
-      tipoAsistencia = 'entrada_manana';
-    }else if(estado.entrada_manana_registrada && !estado.salida_manana_registrada){
-      tipoAsistencia = 'salida_manana';
-    }else if(estado.salida_manana_registrada && !estado.entrada_tarde_registrada){
-      tipoAsistencia = 'entrada_tarde';
-    }else if(estado.entrada_tarde_registrada && !estado.salida_tarde_registrada){
-      tipoAsistencia = 'salida_tarde';
-    }
-
-    console.log('Tipo asistencia elegido:', tipoAsistencia);
-
-    let msgFinal = 'Check-in de reunión registrado';
-
-    if(tipoAsistencia){
-      const res = await api('registrarAsistencia', {
-        usuario_id: SESSION.uid,
-        tipo: tipoAsistencia,
-        latitud: gpsLat || 0,
-        longitud: gpsLng || 0,
-        ubicacion_texto: gpsText || 'Check-in manual desde sala de reunión',
-        foto_base64: ''
-      });
-
-      console.log('Respuesta registrarAsistencia:', res);
-
-      if(res && res.ok){
-        msgFinal = `Check-in registrado como ${tipoAsistencia.replaceAll('_',' ')}`;
-        await cargarEstadoAsistencia();
-        cargarDashboard();
-
-        if(typeof cargarHistorial === 'function') await cargarHistorial();
-        if(typeof cargarReporte === 'function') await cargarReporte();
-        if(typeof cargarAsistencias === 'function') await cargarAsistencias();
-      }else if(res && res.msg){
-        msgFinal = `Check-in de reunión registrado, pero asistencia no: ${res.msg}`;
-      }
-    }else{
-      console.log('No se encontró una asistencia pendiente para registrar');
-
-      const resCheckHist = await api('registrarCheckinReunion', {
-        usuario_id: SESSION.uid,
-        sesion_id: salaActiva.id,
-        latitud: gpsLat || 0,
-        longitud: gpsLng || 0,
-        ubicacion_texto: gpsText || 'Check-in manual desde sala de reunión',
-        foto_base64: ''
-      });
-
-      console.log('Respuesta registrarCheckinReunion:', resCheckHist);
-
-      if(resCheckHist && resCheckHist.ok){
-        msgFinal = '✅ Check-in de reunión registrado en historial';
-
-        if(typeof cargarHistorial === 'function') await cargarHistorial();
-        if(typeof cargarReporte === 'function') await cargarReporte();
-        if(typeof cargarAsistencias === 'function') await cargarAsistencias();
-      }else if(resCheckHist && resCheckHist.msg){
-        msgFinal = resCheckHist.msg;
-      }
-    }
-
-    document.getElementById('ultimoCheckin').textContent =
-      new Date().toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
-
     showLoading(false);
-    showMsg(msgFinal, 'success');
+
+    if(!ck?.ok){
+      showMsg(ck?.msg || 'No se pudo registrar el check-in','danger');
+      return;
+    }
+
+    const el = document.getElementById('ultimoCheckin');
+    if(el) el.textContent = new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+
+    showMsg('✅ Check-in de reunión registrado','success');
 
   }catch(e){
     showLoading(false);
-    console.error('Error en checkinManualReunion:', e);
-    showMsg('Error al registrar el check-in manual','danger');
+    showMsg('Error al registrar el check-in','danger');
   }
 }
 async function initAgora(sesionId,channel){
