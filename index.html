@@ -656,6 +656,9 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
                 </select>
               </div>
               <button class="btn-primary-custom" onclick="cargarEvidencias()"><i class="fas fa-search"></i> Buscar</button>
+              <button class="btn-danger-custom" onclick="eliminarTodasEvidencias()" id="btnEliminarEvidencias" style="display:none">
+              <i class="fas fa-trash-alt"></i> Eliminar Todas
+            </button>
             </div>
           </div>
           <div id="evidenciasGrid">
@@ -2136,20 +2139,18 @@ async function cargarEvidencias(){
   showLoading(false);
   if(!res.ok||!res.evidencias?.length){
     cont.innerHTML='<div class="card-panel text-center py-5"><i class="fas fa-images" style="font-size:48px;color:var(--muted);display:block;margin-bottom:16px"></i><p style="color:var(--muted)">No hay evidencias fotográficas para los filtros seleccionados.</p></div>';
+    const btnElim=document.getElementById('btnEliminarEvidencias');
+    if(btnElim)btnElim.style.display='none';
     return;
   }
-
   function buildImgSrc(e){
-    // Si tiene base64 directo
     if(e.foto_base64 && e.foto_base64.startsWith('data:')) return e.foto_base64;
-    // Si tiene URL de Drive, convertir a thumbnail directo
     if(e.foto_path){
       const match = e.foto_path.match(/[?&]id=([a-zA-Z0-9_-]+)/);
       if(match) return `https://lh3.googleusercontent.com/d/${match[1]}=w400`;
     }
     return '';
   }
-
   cont.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">`+
   res.evidencias.map(e=>{
     const imgSrc=buildImgSrc(e);
@@ -2182,6 +2183,36 @@ async function cargarEvidencias(){
         : ''}
     </div>`;
   }).join('')+`</div>`;
+
+  // Cambio 3: Mostrar/ocultar botón eliminar según haya resultados
+  const btnElim=document.getElementById('btnEliminarEvidencias');
+  if(btnElim)btnElim.style.display=res.evidencias?.length?'inline-flex':'none';
+}
+async function eliminarTodasEvidencias(){
+  const fecha = document.getElementById('evFecha')?.value || '';
+  const uid = document.getElementById('evUid')?.value || '';
+
+  const msg = uid
+    ? `¿Eliminar todas las evidencias del ${fecha}?`
+    : `¿Eliminar TODAS las evidencias del día ${fecha}?\n\nEsta acción no se puede deshacer.`;
+
+  if(!confirm(msg)) return;
+
+  showLoading(true);
+  const res = await api('eliminarEvidencias', { fecha, usuario_id: uid });
+  showLoading(false);
+
+  if(res.ok){
+    showMsg(`✅ ${res.eliminadas || 0} evidencia(s) eliminadas correctamente`, 'success');
+    document.getElementById('btnEliminarEvidencias').style.display = 'none';
+    document.getElementById('evidenciasGrid').innerHTML = `
+      <div class="card-panel text-center py-5">
+        <i class="fas fa-images" style="font-size:48px;color:var(--muted);display:block;margin-bottom:16px"></i>
+        <p style="color:var(--muted)">No hay evidencias para mostrar.</p>
+      </div>`;
+  } else {
+    showMsg('❌ ' + (res.msg || 'Error al eliminar'), 'danger');
+  }
 }
 
 async function exportarPDF(){
