@@ -352,22 +352,32 @@ body{font-family:var(--font-body);background:var(--ink);color:var(--text);overfl
                 <div id="gpsInfo" style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15);border-radius:10px;padding:12px 16px;font-size:13px;color:#7dd3fc;margin-bottom:20px">
                   <i class="fas fa-location-dot"></i> Obteniendo ubicación...
                 </div>
-                <div class="mb-4">
-                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text2);font-size:14px;margin-bottom:12px">
-                    <input type="checkbox" id="enableCamera" onchange="toggleCameraAsist()">
-                    <i class="fas fa-camera" style="color:var(--accent)"></i>Registrar evidencia fotográfica
-                  </label>
-                  <div id="cameraSection" style="display:none">
-                    <div style="width:200px;border-radius:12px;overflow:hidden;border:2px solid var(--accent);background:#000;margin-bottom:8px">
-                      <video id="videoPreview" autoplay playsinline style="width:100%;display:block"></video>
-                      <canvas id="photoCanvas" style="display:none;width:100%"></canvas>
-                    </div>
-                    <div class="d-flex gap-2">
-                      <button class="btn-outline-custom" onclick="capturePhoto()"><i class="fas fa-camera"></i> Capturar</button>
-                      <button class="btn-outline-custom" id="btnResetPhoto" style="display:none" onclick="resetPhoto()"><i class="fas fa-redo"></i> Repetir</button>
-                    </div>
-                  </div>
-                </div>
+               <div class="mb-4">
+  <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 16px;font-size:13px;color:#fcd34d;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+    <i class="fas fa-camera"></i>
+    <span>La evidencia fotográfica es <strong>obligatoria</strong> para registrar asistencia</span>
+  </div>
+  <div id="cameraSection">
+    <div style="width:220px;border-radius:12px;overflow:hidden;border:2px solid var(--border2);background:#000;margin-bottom:8px;position:relative" id="cameraWrapper">
+      <video id="videoPreview" autoplay playsinline style="width:100%;display:block"></video>
+      <canvas id="photoCanvas" style="display:none;width:100%"></canvas>
+      <div id="cameraStatusBadge" style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:var(--muted);font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;display:flex;align-items:center;gap:5px">
+        <i class="fas fa-circle-notch fa-spin"></i> Iniciando...
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-outline-custom" id="btnCapturar" onclick="capturePhoto()" disabled>
+        <i class="fas fa-camera"></i> Capturar foto
+      </button>
+      <button class="btn-outline-custom" id="btnResetPhoto" style="display:none" onclick="resetPhoto()">
+        <i class="fas fa-redo"></i> Repetir
+      </button>
+    </div>
+    <div id="cameraError" style="display:none;margin-top:8px" class="alert-danger-msg">
+      <i class="fas fa-exclamation-circle"></i> No se pudo acceder a la cámara. Verifica los permisos del navegador.
+    </div>
+  </div>
+</div>
                 <div class="row g-3">
   <div class="col-12">
     <button class="btn-asistencia btn-entrada" id="btnEntradaManana" onclick="registrarAsistencia('entrada_manana')">
@@ -1154,6 +1164,9 @@ hp.innerHTML=`
       {enableHighAccuracy:true,timeout:10000}
     );
   }
+
+  // NUEVO: forzar cámara obligatoria
+  forzarCamaraObligatoria();
 }
 
 async function registrarAsistencia(tipo){
@@ -1279,25 +1292,6 @@ async function entrarDesdeNotificacion(){
   showPage('reunion');
   await abrirSala(banner._salaId, banner._codigo, banner._nombre, banner._channel);
 }
-
-async function toggleCameraAsist(){const enabled=document.getElementById('enableCamera').checked;const sec=document.getElementById('cameraSection');if(enabled){sec.style.display='block';try{localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});document.getElementById('videoPreview').srcObject=localStream;}catch(e){alert('No se pudo acceder a la cámara: '+e.message);document.getElementById('enableCamera').checked=false;sec.style.display='none';}}else{sec.style.display='none';if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}}}
-function capturePhoto(){
-  const v=document.getElementById('videoPreview');
-  const c=document.getElementById('photoCanvas');
-  // ✅ Reducir resolución máxima a 320x240
-  const maxW=320, maxH=240;
-  let w=v.videoWidth||320, h=v.videoHeight||240;
-  if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
-  if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
-  c.width=w; c.height=h;
-  c.getContext('2d').drawImage(v,0,0,w,h);
-  v.style.display='none';
-  c.style.display='block';
-  document.getElementById('btnResetPhoto').style.display='inline-flex';
-  fotoCaptured=true;
-  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
-}
-function resetPhoto(){document.getElementById('videoPreview').style.display='block';document.getElementById('photoCanvas').style.display='none';document.getElementById('btnResetPhoto').style.display='none';fotoCaptured=false;toggleCameraAsist();}
 
 async function cargarHistorial(){
   const mes = document.getElementById('filtroMes').value;
@@ -2697,6 +2691,97 @@ window.addEventListener('beforeunload',()=>{
   const fd=new FormData();fd.append('ajax','1');fd.append('accion','salirReunion');fd.append('sesion_id',salaActiva.id);
   navigator.sendBeacon('',fd);
 });
+
+async function forzarCamaraObligatoria(){
+  fotoCaptured=false;
+  ['btnEntradaManana','btnSalidaManana','btnEntradaTarde','btnSalidaTarde'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.disabled=true;
+  });
+  const wrapper=document.getElementById('cameraWrapper');
+  if(wrapper) wrapper.style.border='2px solid rgba(245,158,11,.6)';
+
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+    const vid=document.getElementById('videoPreview');
+    if(vid){vid.srcObject=localStream;vid.style.display='block';}
+    const canvas=document.getElementById('photoCanvas');
+    if(canvas) canvas.style.display='none';
+    const btn=document.getElementById('btnCapturar');
+    if(btn) btn.disabled=false;
+    const badge=document.getElementById('cameraStatusBadge');
+    if(badge) badge.innerHTML='<i class="fas fa-circle" style="color:#ff4444;font-size:8px"></i> Listo — Captura tu foto';
+    const resetBtn=document.getElementById('btnResetPhoto');
+    if(resetBtn) resetBtn.style.display='none';
+  }catch(e){
+    const badge=document.getElementById('cameraStatusBadge');
+    if(badge){badge.style.background='rgba(255,94,122,.3)';badge.innerHTML='<i class="fas fa-times-circle" style="color:#ff5e7a"></i> Sin acceso';}
+    const errDiv=document.getElementById('cameraError');
+    if(errDiv) errDiv.style.display='flex';
+    const wrapper=document.getElementById('cameraWrapper');
+    if(wrapper) wrapper.style.border='2px solid var(--danger)';
+  }
+}
+
+function capturePhoto(){
+  const v=document.getElementById('videoPreview');
+  const c=document.getElementById('photoCanvas');
+  const maxW=320,maxH=240;
+  let w=v.videoWidth||320,h=v.videoHeight||240;
+  if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+  if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
+  c.width=w;c.height=h;
+  c.getContext('2d').drawImage(v,0,0,w,h);
+  v.style.display='none';
+  c.style.display='block';
+  document.getElementById('btnResetPhoto').style.display='inline-flex';
+  document.getElementById('btnCapturar').style.display='none';
+  fotoCaptured=true;
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+
+  const wrapper=document.getElementById('cameraWrapper');
+  if(wrapper) wrapper.style.border='2px solid var(--success)';
+  const badge=document.getElementById('cameraStatusBadge');
+  if(badge){badge.style.background='rgba(34,211,168,.25)';badge.innerHTML='<i class="fas fa-check-circle" style="color:var(--success)"></i> Foto capturada';}
+
+  cargarEstadoAsistenciaButtons();
+}
+
+async function cargarEstadoAsistenciaButtons(){
+  const res=await api('getEstadoHoy',{usuario_id:SESSION.uid});
+  if(!res.ok||!fotoCaptured)return;
+
+  const btnEM=document.getElementById('btnEntradaManana');
+  const btnSM=document.getElementById('btnSalidaManana');
+  const btnET=document.getElementById('btnEntradaTarde');
+  const btnST=document.getElementById('btnSalidaTarde');
+
+  if(btnEM) btnEM.disabled=res.entrada_manana_registrada;
+  if(btnSM) btnSM.disabled=!res.entrada_manana_registrada||res.salida_manana_registrada;
+  if(btnET) btnET.disabled=!res.salida_manana_registrada||res.entrada_tarde_registrada;
+  if(btnST) btnST.disabled=!res.entrada_tarde_registrada||res.salida_tarde_registrada;
+}
+
+function resetPhoto(){
+  fotoCaptured=false;
+  const v=document.getElementById('videoPreview');
+  const c=document.getElementById('photoCanvas');
+  if(v) v.style.display='block';
+  if(c) c.style.display='none';
+  document.getElementById('btnResetPhoto').style.display='none';
+  document.getElementById('btnCapturar').style.display='inline-flex';
+
+  ['btnEntradaManana','btnSalidaManana','btnEntradaTarde','btnSalidaTarde'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.disabled=true;
+  });
+
+  const wrapper=document.getElementById('cameraWrapper');
+  if(wrapper) wrapper.style.border='2px solid rgba(245,158,11,.6)';
+  const badge=document.getElementById('cameraStatusBadge');
+  if(badge){badge.style.background='rgba(0,0,0,.6)';badge.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Reiniciando...';}
+
+  forzarCamaraObligatoria();
+}
 </script>
 </body>
 </html>
