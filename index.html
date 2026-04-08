@@ -996,7 +996,15 @@ function renderTabla(rows){
   if(!rows||!rows.length)return'<p style="color:var(--muted);padding:16px;font-size:14px">Sin registros</p>';
   const isAdm=SESSION.rol==='admin';
   return`<table class="table-custom"><thead><tr>${isAdm?'<th>Colaborador</th>':''}<th>Fecha</th><th>Tipo</th><th>Hora</th><th>Estado</th></tr></thead><tbody>`+
-  rows.map(r=>`<tr>${isAdm?`<td><strong>${r.nombre||''} ${r.apellido||''}</strong></td>`:''}<td>${r.fecha||''}</td><td><span class="badge-custom ${r.tipo==='entrada'?'badge-green':'badge-blue'}">${(r.tipo||'').charAt(0).toUpperCase()+(r.tipo||'').slice(1)}</span></td><td style="font-family:var(--font-head);font-size:18px;font-weight:700">${String(r.hora||'').slice(0,5)}</td><td>${parseInt(r.tardanza)?`<span class="badge-custom badge-orange">+${r.minutos_tardanza}min</span>`:'<span class="badge-custom badge-green">✓ OK</span>'}</td></tr>`).join('')+'</tbody></table>';
+  rows.map(r=>{
+    let badge = '<span class="badge-custom badge-green">✓ OK</span>';
+    if(parseInt(r.tardanza)){
+      badge = `<span class="badge-custom badge-orange">+${r.minutos_tardanza}min tarde</span>`;
+    } else if(parseInt(r.salida_anticipada)){
+      badge = `<span class="badge-custom badge-orange">-${r.minutos_salida_anticipada}min anticipada</span>`;
+    }
+    return `<tr>${isAdm?`<td><strong>${r.nombre||''} ${r.apellido||''}</strong></td>`:''}<td>${r.fecha||''}</td><td><span class="badge-custom ${String(r.tipo||'').includes('entrada')?'badge-green':'badge-blue'}">${(r.tipo||'').charAt(0).toUpperCase()+(r.tipo||'').slice(1)}</span></td><td style="font-family:var(--font-head);font-size:18px;font-weight:700">${String(r.hora||'').slice(0,5)}</td><td>${badge}</td></tr>`;
+  }).join('')+'</tbody></table>';
 }
 
 let gpsLat=0,gpsLng=0,gpsText='',fotoCaptured=false,localStream=null;
@@ -1415,13 +1423,17 @@ async function cargarHistorial(){
     const horasTxt = minTot > 0 ? `${Math.floor(minTot/60)}h ${minTot%60}m` : '—';
 
     let estado = '—';
-    if((em && parseInt(em.tardanza || 0) === 1) || (et && parseInt(et.tardanza || 0) === 1)){
-      const t1 = em && parseInt(em.tardanza || 0) === 1 ? parseInt(em.minutos_tardanza || 0) : 0;
-      const t2 = et && parseInt(et.tardanza || 0) === 1 ? parseInt(et.minutos_tardanza || 0) : 0;
+    if((em && parseInt(em.tardanza||0)===1)||(et && parseInt(et.tardanza||0)===1)){
+      const t1 = em && parseInt(em.tardanza||0)===1 ? parseInt(em.minutos_tardanza||0) : 0;
+      const t2 = et && parseInt(et.tardanza||0)===1 ? parseInt(et.minutos_tardanza||0) : 0;
       estado = `<span class="badge-custom badge-orange">+${t1+t2}min tarde</span>`;
-    }else if(em || et || cr.length){
+    } else if((sm && parseInt(sm.salida_anticipada||0)===1)||(st && parseInt(st.salida_anticipada||0)===1)){
+      const a1 = sm && parseInt(sm.salida_anticipada||0)===1 ? parseInt(sm.minutos_salida_anticipada||0) : 0;
+      const a2 = st && parseInt(st.salida_anticipada||0)===1 ? parseInt(st.minutos_salida_anticipada||0) : 0;
+      estado = `<span class="badge-custom badge-orange">-${a1+a2}min anticipada</span>`;
+    } else if(em || et || cr.length){
       estado = '<span class="badge-custom badge-green">✓ Registrado</span>';
-    }else{
+    } else {
       estado = '<span class="badge-custom badge-red">Falta</span>';
     }
 
@@ -2084,9 +2096,13 @@ async function cargarReporte(){
     if(r.tipo === 'checkin_reunion'){
       return '<span class="badge-custom badge-orange">Reunión</span>';
     }
-    return parseInt(r.tardanza)
-      ? `<span class="badge-custom badge-orange">+${r.minutos_tardanza}min</span>`
-      : '<span class="badge-custom badge-green">Puntual</span>';
+    if(parseInt(r.tardanza)){
+      return `<span class="badge-custom badge-orange">+${r.minutos_tardanza}min tarde</span>`;
+    }
+    if(parseInt(r.salida_anticipada)){
+      return `<span class="badge-custom badge-orange">-${r.minutos_salida_anticipada}min anticipada</span>`;
+    }
+    return '<span class="badge-custom badge-green">Puntual</span>';
   }
 
   document.getElementById('reporteTable').innerHTML = total
@@ -2334,17 +2350,35 @@ async function exportarPDF(){
       const fechaFmt=partes.length===3?`${partes[2]}/${partes[1]}/${partes[0]}`:fecha;
 
       const horaEM=em?String(em.hora||'').slice(0,5):'—';
-      const estadoEM=em ? (parseInt(em.tardanza)?`Tardanza +${em.minutos_tardanza} min`:'Puntual') : '—';
+      const estadoEM = em
+        ? (parseInt(em.tardanza)
+            ? `Tardanza +${em.minutos_tardanza} min`
+            : 'Puntual')
+        : '—';
 
       const horaSM=sm?String(sm.hora||'').slice(0,5):'—';
 
       const horaET=et?String(et.hora||'').slice(0,5):'—';
-      const estadoET=et ? (parseInt(et.tardanza)?`Tardanza +${et.minutos_tardanza} min`:'Puntual') : '—';
+      const estadoET = et
+        ? (parseInt(et.tardanza)
+            ? `Tardanza +${et.minutos_tardanza} min`
+            : 'Puntual')
+        : '—'
+      const estadoSM = sm
+        ? (parseInt(sm.salida_anticipada)
+            ? `Anticipada -${sm.minutos_salida_anticipada} min`
+            : 'A tiempo')
+        : '—';
+      const estadoST = st
+        ? (parseInt(st.salida_anticipada)
+            ? `Anticipada -${st.minutos_salida_anticipada} min`
+            : 'A tiempo')
+        : '—';
 
       const horaST=st?String(st.hora||'').slice(0,5):'—';
       const horaCR=cr.length ? cr.map(c=>String(c.hora||'').slice(0,5)).join(', ') : '—';
 
-      filas.push([num++,fechaFmt,horaEM,estadoEM,horaSM,horaET,estadoET,horaST,horaCR]);
+      filas.push([num++,fechaFmt,horaEM,estadoEM,horaSM,estadoSM,horaET,estadoET,horaST,estadoST,horaCR]);
     });
 
     doc.autoTable({
@@ -2380,16 +2414,19 @@ async function exportarPDF(){
         8:{halign:'center'}
       },
       didParseCell:function(data){
-        if(data.section==='body' && (data.column.index===3 || data.column.index===6)){
+        if(data.section==='body' && [3,5,6,8].includes(data.column.index)){
           const txt=String(data.cell.raw||'');
           if(txt.includes('Tardanza')){
             data.cell.styles.textColor=COLORES.rojo;
             data.cell.styles.fontStyle='bold';
-          }else if(txt==='Puntual'){
+          } else if(txt.includes('Anticipada')){
+            data.cell.styles.textColor=COLORES.naranja;
+            data.cell.styles.fontStyle='bold';
+          } else if(txt==='Puntual'||txt==='A tiempo'){
             data.cell.styles.textColor=COLORES.verde;
           }
         }
-        if(data.section==='body' && data.column.index===8){
+        if(data.section==='body' && data.column.index===10){
           const txt=String(data.cell.raw||'');
           if(txt !== '—'){
             data.cell.styles.textColor=COLORES.naranja;
