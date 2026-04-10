@@ -2276,6 +2276,16 @@ async function exportarPDF(){
     textoMuted:[100,110,130]
   };
 
+  // ── Convierte "YYYY-MM-DD" → "DD/MM/YYYY" correctamente ──
+  function fmtFecha(f){
+    if(!f) return '—';
+    const s = String(f).trim();
+    // formato YYYY-MM-DD
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) return `${m[3]}/${m[2]}/${m[1]}`;
+    return s;
+  }
+
   usuarios.forEach((usuario,idx)=>{
     if(idx>0) doc.addPage();
 
@@ -2327,9 +2337,10 @@ async function exportarPDF(){
 
     y+=22;
 
+    // ── Agrupar registros por fecha ──
     const porFecha={};
     usuario.registros.forEach(r=>{
-      const f=r.fecha||'';
+      const f=String(r.fecha||'').trim();
       if(!porFecha[f]) porFecha[f]=[];
       porFecha[f].push(r);
     });
@@ -2337,6 +2348,7 @@ async function exportarPDF(){
     const filas=[];
     let num=1;
 
+    // Ordenar fechas ascendente
     Object.keys(porFecha).sort().forEach(fecha=>{
       const regs=porFecha[fecha];
 
@@ -2346,39 +2358,51 @@ async function exportarPDF(){
       const st=regs.find(r=>r.tipo==='salida_tarde');
       const cr=regs.filter(r=>r.tipo==='checkin_reunion');
 
-      const partes=fecha.split('-');
-      const fechaFmt=partes.length===3?`${partes[2]}/${partes[1]}/${partes[0]}`:fecha;
+      // ── Fecha correcta DD/MM/YYYY ──
+      const fechaFmt = fmtFecha(fecha);
 
-      const horaEM=em?String(em.hora||'').slice(0,5):'—';
+      // ── Columna 2: Ent. Mañana (hora) ──
+      const horaEM = em ? String(em.hora||'').slice(0,5) : '—';
+
+      // ── Columna 3: Estado M (tardanza o puntual) ──
       const estadoEM = em
-        ? (parseInt(em.tardanza)
-            ? `Tardanza +${em.minutos_tardanza} min`
+        ? (parseInt(em.tardanza||0)===1
+            ? `Tardanza +${em.minutos_tardanza||0} min`
             : 'Puntual')
         : '—';
 
-      const horaSM=sm?String(sm.hora||'').slice(0,5):'—';
+      // ── Columna 4: Sal. Mañana (hora) ──
+      const horaSM = sm ? String(sm.hora||'').slice(0,5) : '—';
 
-      const horaET=et?String(et.hora||'').slice(0,5):'—';
+      // ── Columna 5: Ent. Tarde (hora) ──
+      const horaET = et ? String(et.hora||'').slice(0,5) : '—';
+
+      // ── Columna 6: Estado T (tardanza o a tiempo) ──
       const estadoET = et
-        ? (parseInt(et.tardanza)
-            ? `Tardanza +${et.minutos_tardanza} min`
-            : 'Puntual')
-        : '—'
-      const estadoSM = sm
-        ? (parseInt(sm.salida_anticipada)
-            ? `Anticipada -${sm.minutos_salida_anticipada} min`
-            : 'A tiempo')
-        : '—';
-      const estadoST = st
-        ? (parseInt(st.salida_anticipada)
-            ? `Anticipada -${st.minutos_salida_anticipada} min`
+        ? (parseInt(et.tardanza||0)===1
+            ? `Tardanza +${et.minutos_tardanza||0} min`
             : 'A tiempo')
         : '—';
 
-      const horaST=st?String(st.hora||'').slice(0,5):'—';
-      const horaCR=cr.length ? cr.map(c=>String(c.hora||'').slice(0,5)).join(', ') : '—';
+      // ── Columna 7: Sal. Tarde (hora) ──
+      const horaST = st ? String(st.hora||'').slice(0,5) : '—';
 
-      filas.push([num++,fechaFmt,horaEM,estadoEM,horaSM,estadoSM,horaET,estadoET,horaST,estadoST,horaCR]);
+      // ── Columna 8: Check-in Reunión ──
+      const horaCR = cr.length ? cr.map(c=>String(c.hora||'').slice(0,5)).join(', ') : '—';
+
+      // Orden correcto: #, Fecha, EntMañana, EstadoM, SalMañana, EntTarde, EstadoT, SalTarde, CheckIn
+      // índices:        0    1       2           3         4          5         6        7         8
+      filas.push([
+        num++,        // 0 — #
+        fechaFmt,     // 1 — Fecha DD/MM/YYYY
+        horaEM,       // 2 — Ent. Mañana
+        estadoEM,     // 3 — Estado M
+        horaSM,       // 4 — Sal. Mañana
+        horaET,       // 5 — Ent. Tarde
+        estadoET,     // 6 — Estado T
+        horaST,       // 7 — Sal. Tarde
+        horaCR        // 8 — Check-in Reunión
+      ]);
     });
 
     doc.autoTable({
@@ -2403,38 +2427,37 @@ async function exportarPDF(){
       },
       alternateRowStyles:{fillColor:COLORES.grisClaro},
       columnStyles:{
-        0:{halign:'center',cellWidth:10},
-        1:{halign:'center',cellWidth:24},
-        2:{halign:'center',cellWidth:22},
-        3:{halign:'center',cellWidth:28},
-        4:{halign:'center',cellWidth:22},
-        5:{halign:'center',cellWidth:22},
-        6:{halign:'center',cellWidth:28},
-        7:{halign:'center',cellWidth:22},
+        0:{halign:'center',cellWidth:8},
+        1:{halign:'center',cellWidth:22},
+        2:{halign:'center',cellWidth:20},
+        3:{halign:'center',cellWidth:30},
+        4:{halign:'center',cellWidth:20},
+        5:{halign:'center',cellWidth:20},
+        6:{halign:'center',cellWidth:30},
+        7:{halign:'center',cellWidth:20},
         8:{halign:'center'}
       },
       didParseCell:function(data){
-        if(data.section==='body' && [3,5,6,8].includes(data.column.index)){
+        if(data.section==='body'){
           const txt=String(data.cell.raw||'');
-          if(txt.includes('Tardanza')){
-            data.cell.styles.textColor=COLORES.rojo;
-            data.cell.styles.fontStyle='bold';
-          } else if(txt.includes('Anticipada')){
-            data.cell.styles.textColor=COLORES.naranja;
-            data.cell.styles.fontStyle='bold';
-          } else if(txt==='Puntual'||txt==='A tiempo'){
-            data.cell.styles.textColor=COLORES.verde;
+          // Estado M (col 3) y Estado T (col 6) → colorear
+          if(data.column.index===3 || data.column.index===6){
+            if(txt.includes('Tardanza')){
+              data.cell.styles.textColor=COLORES.rojo;
+              data.cell.styles.fontStyle='bold';
+            } else if(txt==='Puntual' || txt==='A tiempo'){
+              data.cell.styles.textColor=COLORES.verde;
+              data.cell.styles.fontStyle='bold';
+            }
           }
-        }
-        if(data.section==='body' && data.column.index===10){
-          const txt=String(data.cell.raw||'');
-          if(txt !== '—'){
+          // Check-in Reunión (col 8) → naranja si tiene hora
+          if(data.column.index===8 && txt!=='—'){
             data.cell.styles.textColor=COLORES.naranja;
             data.cell.styles.fontStyle='bold';
           }
         }
       },
-      foot:[['',`Total: ${total}`,`Puntuales: ${puntuales}`,'',`Tardanzas: ${tardanzas}`,'','','',`Check-in: ${checkins}`]],
+      foot:[['',`Total: ${total}`,'',`Puntuales: ${puntuales}`,'','',`Tardanzas: ${tardanzas}`,'',`Check-in: ${checkins}`]],
       footStyles:{
         fillColor:COLORES.azulMedio,
         textColor:COLORES.blanco,
@@ -2454,42 +2477,6 @@ async function exportarPDF(){
   doc.save(`reporte_asistencia_${mesNombre}_${anio}.pdf`);
   showLoading(false);
   showMsg('✅ PDF generado correctamente','success');
-}
-async function buscarSala(){
-  const codigo = document.getElementById('codigoReunion').value.trim().toUpperCase();
-  if(!codigo){
-    document.getElementById('joinMsg').innerHTML = '<div class="alert-warning-msg">Ingresa el código de la sala.</div>';
-    return;
-  }
-
-  showLoading(true);
-  const res = await api('getSesion', { codigo });
-  showLoading(false);
-
-  if(!res.ok){
-    document.getElementById('joinMsg').innerHTML = '<div class="alert-danger-msg">Sala no encontrada o inactiva.</div>';
-    return;
-  }
-
-  salaGrupoMiembros = [];
-  const grupoId = res.sesion?.grupo_id || res.sesion?.grupo?.id || null;
-
-  if(grupoId){
-    const colRes = await api('getGrupos');
-    if(colRes.ok){
-      const grupo = (colRes.grupos || []).find(g => parseInt(g.id) === parseInt(grupoId));
-      if(grupo && grupo.miembros) salaGrupoMiembros = grupo.miembros;
-    }
-  }
-
-  showPage('reunion');
-  await abrirSala(
-    res.sesion.id,
-    res.sesion.codigo,
-    res.sesion.nombre,
-    res.sesion.agora_channel,
-    grupoId
-  );
 }
 
 async function abrirSala(id,codigo,nombre,channel,gId=null){
