@@ -2276,24 +2276,23 @@ async function exportarPDF(){
     textoMuted:[100,110,130]
   };
 
-  // ── Convierte "YYYY-MM-DD" → "DD/MM/YYYY" correctamente ──
   function fmtFecha(f){
     if(!f) return '—';
-    const s = String(f).trim();
-    // formato YYYY-MM-DD
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const s=String(f).trim();
+    const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if(m) return `${m[3]}/${m[2]}/${m[1]}`;
     return s;
   }
 
   usuarios.forEach((usuario,idx)=>{
     if(idx>0) doc.addPage();
-
     const W=doc.internal.pageSize.getWidth();
 
+    // ── Encabezado ──
     doc.setFillColor(...COLORES.azulOscuro); doc.rect(0,0,W,28,'F');
-    doc.setFillColor(...COLORES.azulClaro); doc.rect(0,24,W,3,'F');
-    doc.setTextColor(...COLORES.blanco); doc.setFont('helvetica','bold'); doc.setFontSize(16);
+    doc.setFillColor(...COLORES.azulClaro);  doc.rect(0,24,W,3,'F');
+    doc.setTextColor(...COLORES.blanco);
+    doc.setFont('helvetica','bold'); doc.setFontSize(16);
     doc.text('REPORTE DE ASISTENCIA — FINACORP',W/2,10,{align:'center'});
     doc.setFontSize(8); doc.setFont('helvetica','normal');
     doc.text(`Período: ${periodoLabel}`,W/2,17,{align:'center'});
@@ -2301,35 +2300,48 @@ async function exportarPDF(){
 
     let y=34;
 
-    doc.setFillColor(...COLORES.grisClaro); doc.roundedRect(8,y,W-16,26,2,2,'F');
-    doc.setDrawColor(...COLORES.azulClaro); doc.setLineWidth(0.5); doc.roundedRect(8,y,W-16,26,2,2,'S');
+    // ── Tarjeta colaborador ──
+    doc.setFillColor(...COLORES.grisClaro);
+    doc.roundedRect(8,y,W-16,26,2,2,'F');
+    doc.setDrawColor(...COLORES.azulClaro); doc.setLineWidth(0.5);
+    doc.roundedRect(8,y,W-16,26,2,2,'S');
     doc.setFillColor(...COLORES.azulClaro); doc.rect(8,y,3,26,'F');
-    doc.setTextColor(...COLORES.azulOscuro); doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.setTextColor(...COLORES.azulOscuro);
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
     doc.text(usuario.nombre.toUpperCase(),16,y+8);
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...COLORES.textoMuted);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.setTextColor(...COLORES.textoMuted);
     doc.text(`ID: ${usuario.uid}`,16,y+14);
     doc.text(`Área: ${usuario.departamento.toUpperCase()}`,16,y+19);
     doc.text(`Cargo: ${usuario.cargo}`,16,y+24);
 
     y+=32;
 
-    const total=usuario.registros.length;
-    const puntuales=usuario.registros.filter(r=>!parseInt(r.tardanza) && r.tipo!=='checkin_reunion').length;
-    const tardanzas=usuario.registros.filter(r=>parseInt(r.tardanza)).length;
-    const checkins=usuario.registros.filter(r=>r.tipo==='checkin_reunion').length;
+    // ── Calcular estadísticas ──
+    const total       = usuario.registros.length;
+    const tardanzas   = usuario.registros.filter(r=>parseInt(r.tardanza)).length;
+    const checkins    = usuario.registros.filter(r=>r.tipo==='checkin_reunion').length;
 
+    // Sumar todos los minutos de tardanza
+    const minTardTotal = usuario.registros.reduce((acc,r)=>{
+      return acc + (parseInt(r.tardanza) ? (parseInt(r.minutos_tardanza)||0) : 0);
+    },0);
+
+    // ── Stats: Total registros | Tardanzas | Min tardanza total | Check-in ──
     const stats=[
-      {label:'Total',valor:total,color:COLORES.azulMedio},
-      {label:'Puntuales',valor:puntuales,color:COLORES.verde},
-      {label:'Tardanzas',valor:tardanzas,color:COLORES.rojo},
-      {label:'Check-in',valor:checkins,color:COLORES.naranja}
+      {label:'Total Registros', valor:total,              color:COLORES.azulMedio},
+      {label:'Tardanzas',       valor:tardanzas,           color:COLORES.rojo},
+      {label:'Min. Tardanza',   valor:minTardTotal+' min', color:COLORES.naranja},
+      {label:'Check-in',        valor:checkins,            color:COLORES.azulClaro}
     ];
 
     const cardW=(W-20)/stats.length;
     stats.forEach((s,i)=>{
       const cx=10+i*cardW;
-      doc.setFillColor(...s.color); doc.roundedRect(cx,y,cardW-4,16,2,2,'F');
-      doc.setTextColor(...COLORES.blanco); doc.setFont('helvetica','bold'); doc.setFontSize(16);
+      doc.setFillColor(...s.color);
+      doc.roundedRect(cx,y,cardW-4,16,2,2,'F');
+      doc.setTextColor(...COLORES.blanco);
+      doc.setFont('helvetica','bold'); doc.setFontSize(14);
       doc.text(String(s.valor),cx+(cardW-4)/2,y+9,{align:'center'});
       doc.setFontSize(7); doc.setFont('helvetica','normal');
       doc.text(s.label.toUpperCase(),cx+(cardW-4)/2,y+14,{align:'center'});
@@ -2337,7 +2349,7 @@ async function exportarPDF(){
 
     y+=22;
 
-    // ── Agrupar registros por fecha ──
+    // ── Agrupar por fecha ──
     const porFecha={};
     usuario.registros.forEach(r=>{
       const f=String(r.fecha||'').trim();
@@ -2348,7 +2360,6 @@ async function exportarPDF(){
     const filas=[];
     let num=1;
 
-    // Ordenar fechas ascendente
     Object.keys(porFecha).sort().forEach(fecha=>{
       const regs=porFecha[fecha];
 
@@ -2358,62 +2369,81 @@ async function exportarPDF(){
       const st=regs.find(r=>r.tipo==='salida_tarde');
       const cr=regs.filter(r=>r.tipo==='checkin_reunion');
 
-      // ── Fecha correcta DD/MM/YYYY ──
-      const fechaFmt = fmtFecha(fecha);
+      const fechaFmt=fmtFecha(fecha);
 
-      // ── Columna 2: Ent. Mañana (hora) ──
+      // Col 2 — Ent. Mañana
       const horaEM = em ? String(em.hora||'').slice(0,5) : '—';
 
-      // ── Columna 3: Estado M (tardanza o puntual) ──
+      // Col 3 — Estado M (entrada mañana)
       const estadoEM = em
         ? (parseInt(em.tardanza||0)===1
-            ? `Tardanza +${em.minutos_tardanza||0} min`
+            ? `Tard. +${em.minutos_tardanza||0}m`
             : 'Puntual')
         : '—';
 
-      // ── Columna 4: Sal. Mañana (hora) ──
+      // Col 4 — Sal. Mañana
       const horaSM = sm ? String(sm.hora||'').slice(0,5) : '—';
 
-      // ── Columna 5: Ent. Tarde (hora) ──
+      // Col 5 — Est. Salida M
+      const estSalidaM = sm
+        ? (parseInt(sm.salida_anticipada||0)===1
+            ? `-${sm.minutos_salida_anticipada||0}m antic.`
+            : 'Puntual')
+        : '—';
+
+      // Col 6 — Ent. Tarde
       const horaET = et ? String(et.hora||'').slice(0,5) : '—';
 
-      // ── Columna 6: Estado T (tardanza o a tiempo) ──
+      // Col 7 — Estado T (entrada tarde)
       const estadoET = et
         ? (parseInt(et.tardanza||0)===1
-            ? `Tardanza +${et.minutos_tardanza||0} min`
+            ? `Tard. +${et.minutos_tardanza||0}m`
             : 'A tiempo')
         : '—';
 
-      // ── Columna 7: Sal. Tarde (hora) ──
+      // Col 8 — Sal. Tarde
       const horaST = st ? String(st.hora||'').slice(0,5) : '—';
 
-      // ── Columna 8: Check-in Reunión ──
+      // Col 9 — Est. Salida T
+      const estSalidaT = st
+        ? (parseInt(st.salida_anticipada||0)===1
+            ? `-${st.minutos_salida_anticipada||0}m antic.`
+            : 'Puntual')
+        : '—';
+
+      // Col 10 — Check-in
       const horaCR = cr.length ? cr.map(c=>String(c.hora||'').slice(0,5)).join(', ') : '—';
 
-      // Orden correcto: #, Fecha, EntMañana, EstadoM, SalMañana, EntTarde, EstadoT, SalTarde, CheckIn
-      // índices:        0    1       2           3         4          5         6        7         8
+      // índices: 0=#  1=Fecha  2=EntM  3=EstM  4=SalM  5=EstSalM  6=EntT  7=EstT  8=SalT  9=EstSalT  10=CheckIn
       filas.push([
-        num++,        // 0 — #
-        fechaFmt,     // 1 — Fecha DD/MM/YYYY
-        horaEM,       // 2 — Ent. Mañana
-        estadoEM,     // 3 — Estado M
-        horaSM,       // 4 — Sal. Mañana
-        horaET,       // 5 — Ent. Tarde
-        estadoET,     // 6 — Estado T
-        horaST,       // 7 — Sal. Tarde
-        horaCR        // 8 — Check-in Reunión
+        num++,
+        fechaFmt,
+        horaEM,
+        estadoEM,
+        horaSM,
+        estSalidaM,
+        horaET,
+        estadoET,
+        horaST,
+        estSalidaT,
+        horaCR
       ]);
     });
 
     doc.autoTable({
       startY:y,
-      head:[['#','Fecha','Ent. Mañana','Estado M','Sal. Mañana','Ent. Tarde','Estado T','Sal. Tarde','Check-in Reunión']],
+      head:[[
+        '#','Fecha',
+        'Ent. Mañana','Estado M','Sal. Mañana','Est. Sal. M',
+        'Ent. Tarde','Estado T','Sal. Tarde','Est. Sal. T',
+        'Check-in'
+      ]],
       body:filas,
-      margin:{left:8,right:8},
-      tableWidth:W-16,
+      margin:{left:6,right:6},
+      tableWidth:W-12,
       styles:{
-        fontSize:8,
-        cellPadding:3,
+        fontSize:7,
+        cellPadding:2.5,
         textColor:COLORES.texto,
         lineColor:COLORES.grisMedio,
         lineWidth:0.2
@@ -2422,27 +2452,29 @@ async function exportarPDF(){
         fillColor:COLORES.azulOscuro,
         textColor:COLORES.blanco,
         fontStyle:'bold',
-        fontSize:8,
+        fontSize:7,
         halign:'center'
       },
       alternateRowStyles:{fillColor:COLORES.grisClaro},
       columnStyles:{
-        0:{halign:'center',cellWidth:8},
-        1:{halign:'center',cellWidth:22},
-        2:{halign:'center',cellWidth:20},
-        3:{halign:'center',cellWidth:30},
-        4:{halign:'center',cellWidth:20},
-        5:{halign:'center',cellWidth:20},
-        6:{halign:'center',cellWidth:30},
-        7:{halign:'center',cellWidth:20},
-        8:{halign:'center'}
+        0: {halign:'center', cellWidth:7},
+        1: {halign:'center', cellWidth:20},
+        2: {halign:'center', cellWidth:18},
+        3: {halign:'center', cellWidth:24},
+        4: {halign:'center', cellWidth:18},
+        5: {halign:'center', cellWidth:22},
+        6: {halign:'center', cellWidth:18},
+        7: {halign:'center', cellWidth:24},
+        8: {halign:'center', cellWidth:18},
+        9: {halign:'center', cellWidth:22},
+        10:{halign:'center'}
       },
       didParseCell:function(data){
         if(data.section==='body'){
           const txt=String(data.cell.raw||'');
-          // Estado M (col 3) y Estado T (col 6) → colorear
-          if(data.column.index===3 || data.column.index===6){
-            if(txt.includes('Tardanza')){
+          // Estado M (col 3) y Estado T (col 7) → entrada tardanza/puntual
+          if(data.column.index===3 || data.column.index===7){
+            if(txt.includes('Tard.')){
               data.cell.styles.textColor=COLORES.rojo;
               data.cell.styles.fontStyle='bold';
             } else if(txt==='Puntual' || txt==='A tiempo'){
@@ -2450,26 +2482,44 @@ async function exportarPDF(){
               data.cell.styles.fontStyle='bold';
             }
           }
-          // Check-in Reunión (col 8) → naranja si tiene hora
-          if(data.column.index===8 && txt!=='—'){
+          // Est. Salida M (col 5) y Est. Salida T (col 9) → salida anticipada/puntual
+          if(data.column.index===5 || data.column.index===9){
+            if(txt.includes('antic.')){
+              data.cell.styles.textColor=COLORES.naranja;
+              data.cell.styles.fontStyle='bold';
+            } else if(txt==='Puntual'){
+              data.cell.styles.textColor=COLORES.verde;
+              data.cell.styles.fontStyle='bold';
+            }
+          }
+          // Check-in (col 10) → naranja si tiene hora
+          if(data.column.index===10 && txt!=='—'){
             data.cell.styles.textColor=COLORES.naranja;
             data.cell.styles.fontStyle='bold';
           }
         }
       },
-      foot:[['',`Total: ${total}`,'',`Puntuales: ${puntuales}`,'','',`Tardanzas: ${tardanzas}`,'',`Check-in: ${checkins}`]],
+      foot:[[
+        '',
+        `Total: ${total}`,
+        '','','','',
+        '','','','',
+        `Check-in: ${checkins} | Tard: ${tardanzas} | ${minTardTotal} min`
+      ]],
       footStyles:{
         fillColor:COLORES.azulMedio,
         textColor:COLORES.blanco,
         fontStyle:'bold',
-        fontSize:8,
+        fontSize:7,
         halign:'center'
       }
     });
 
     const pageH=doc.internal.pageSize.getHeight();
-    doc.setFillColor(...COLORES.azulOscuro); doc.rect(0,pageH-8,W,8,'F');
-    doc.setTextColor(...COLORES.blanco); doc.setFontSize(7); doc.setFont('helvetica','normal');
+    doc.setFillColor(...COLORES.azulOscuro);
+    doc.rect(0,pageH-8,W,8,'F');
+    doc.setTextColor(...COLORES.blanco);
+    doc.setFontSize(7); doc.setFont('helvetica','normal');
     doc.text('FINACORP — Sistema de Control de Asistencia',10,pageH-3);
     doc.text(`Pág. ${idx+1} / ${usuarios.length}`,W-10,pageH-3,{align:'right'});
   });
@@ -2478,7 +2528,6 @@ async function exportarPDF(){
   showLoading(false);
   showMsg('✅ PDF generado correctamente','success');
 }
-
 async function abrirSala(id,codigo,nombre,channel,gId=null){
   showPage('reunion');
 
